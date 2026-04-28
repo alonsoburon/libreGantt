@@ -1,0 +1,102 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: theme("colors.paper.DEFAULT");
+  color: theme("colors.ink.DEFAULT");
+  font-family: theme("fontFamily.sans");
+  font-feature-settings: "ss01", "cv01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle paper grain */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(rgba(14, 17, 22, 0.025) 1px, transparent 1px);
+  background-size: 3px 3px;
+  opacity: 0.6;
+  mix-blend-mode: multiply;
+}
+
+#__next,
+main {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hide native input arrows on number inputs in dialog */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Scrollbars in the chart container */
+.gantt-scroll::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.gantt-scroll::-webkit-scrollbar-track {
+  background: theme("colors.paper.warm");
+}
+.gantt-scroll::-webkit-scrollbar-thumb {
+  background: theme("colors.ink.muted");
+  border-radius: 999px;
+  border: 2px solid theme("colors.paper.warm");
+}
+
+/* Selection */
+::selection {
+  background: theme("colors.accent.soft");
+  color: theme("colors.ink.DEFAULT");
+}
+
+/* Reusable button base */
+.btn {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md
+         border border-paper-line bg-paper hover:bg-paper-warm transition
+         text-ink-soft hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed;
+}
+.btn-primary {
+  @apply bg-ink text-paper border-ink hover:bg-ink-soft;
+}
+.btn-ghost {
+  @apply border-transparent bg-transparent hover:bg-paper-warm;
+}
+.btn-icon {
+  @apply p-1.5;
+}
+
+/* Field styles */
+.field {
+  @apply w-full px-2.5 py-1.5 text-sm bg-paper border border-paper-line rounded-md
+         focus:outline-none focus:ring-2 focus:ring-ink/15 focus:border-ink/30
+         font-mono;
+}
+
+label.field-label {
+  @apply block text-[11px] uppercase tracking-[0.12em] text-ink-muted mb-1 font-sans;
+}
+
+/* Animation for the bar drag preview */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}

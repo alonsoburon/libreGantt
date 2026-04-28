@@ -1,0 +1,239 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { X, Trash2, Copy, IndentIncrease, IndentDecrease, ChevronUp, ChevronDown } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { TASK_COLORS, type Task } from "@/lib/types";
+import clsx from "clsx";
+
+interface Props {
+  id: string;
+  onClose: () => void;
+}
+
+export default function TaskDialog({ id, onClose }: Props) {
+  const task = useStore((s) => s.tasks.find((t) => t.id === id));
+  const allTasks = useStore((s) => s.tasks);
+  const updateTask = useStore((s) => s.updateTask);
+  const deleteTask = useStore((s) => s.deleteTask);
+  const duplicateTask = useStore((s) => s.duplicateTask);
+  const indent = useStore((s) => s.indent);
+  const outdent = useStore((s) => s.outdent);
+  const moveRow = useStore((s) => s.moveRow);
+
+  const [draft, setDraft] = useState<Task | null>(task ?? null);
+
+  useEffect(() => {
+    setDraft(task ?? null);
+  }, [task]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  if (!draft || !task) return null;
+
+  const commit = (patch: Partial<Task>) => {
+    setDraft({ ...draft, ...patch });
+    updateTask(id, patch);
+  };
+
+  // candidates for dependency (everything except itself and its descendants)
+  const isDescendant = (a: string, ancestor: string): boolean => {
+    let cur = allTasks.find((x) => x.id === a);
+    while (cur && cur.parentId) {
+      if (cur.parentId === ancestor) return true;
+      cur = allTasks.find((x) => x.id === cur!.parentId);
+    }
+    return false;
+  };
+  const depCandidates = allTasks.filter(
+    (t) => t.id !== id && !isDescendant(t.id, id),
+  );
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg bg-paper border border-paper-line rounded-lg shadow-paper overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center justify-between px-5 py-3 border-b border-paper-line">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
+              Editar tarea
+            </span>
+          </div>
+          <button className="btn btn-icon btn-ghost" onClick={onClose} aria-label="Cerrar">
+            <X size={16} />
+          </button>
+        </header>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="field-label">Nombre</label>
+            <input
+              className="field font-sans text-base"
+              value={draft.name}
+              onChange={(e) => commit({ name: e.target.value })}
+              autoFocus
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="field-label">Inicio</label>
+              <input
+                type="date"
+                className="field"
+                value={draft.start}
+                onChange={(e) => {
+                  const start = e.target.value;
+                  // keep end >= start
+                  const end = draft.end < start ? start : draft.end;
+                  commit({ start, end });
+                }}
+              />
+            </div>
+            <div>
+              <label className="field-label">Fin</label>
+              <input
+                type="date"
+                className="field"
+                value={draft.end}
+                min={draft.start}
+                onChange={(e) =>
+                  commit({ end: e.target.value < draft.start ? draft.start : e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="field-label">Progreso ({draft.progress}%)</label>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={draft.progress}
+              onChange={(e) => commit({ progress: Number(e.target.value) })}
+              className="w-full accent-accent"
+            />
+          </div>
+
+          <div>
+            <label className="field-label">Color</label>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => commit({ color: undefined })}
+                className={clsx(
+                  "h-7 w-7 rounded-full border-2 grid place-items-center text-[10px] font-mono",
+                  !draft.color ? "border-ink" : "border-paper-line",
+                )}
+                aria-label="Color por defecto"
+              >
+                ·
+              </button>
+              {TASK_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => commit({ color: c })}
+                  className={clsx(
+                    "h-7 w-7 rounded-full border-2",
+                    draft.color === c ? "border-ink" : "border-paper-line",
+                  )}
+                  style={{ background: c }}
+                  aria-label={`Color ${c}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="field-label">Dependencias (predecesoras)</label>
+            <div className="max-h-32 overflow-y-auto border border-paper-line rounded-md p-2 space-y-1 bg-paper-warm/40">
+              {depCandidates.length === 0 && (
+                <p className="text-xs text-ink-muted px-1 py-0.5">No hay otras tareas.</p>
+              )}
+              {depCandidates.map((t) => {
+                const checked = draft.dependencies.includes(t.id);
+                return (
+                  <label
+                    key={t.id}
+                    className="flex items-center gap-2 px-1.5 py-0.5 text-sm cursor-pointer hover:bg-paper rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...draft.dependencies, t.id]
+                          : draft.dependencies.filter((d) => d !== t.id);
+                        commit({ dependencies: next });
+                      }}
+                      className="accent-ink"
+                    />
+                    <span className="font-mono text-xs text-ink-muted">{t.id.slice(2, 6)}</span>
+                    <span className="truncate">{t.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="field-label">Notas</label>
+            <textarea
+              className="field font-sans"
+              rows={2}
+              value={draft.notes ?? ""}
+              onChange={(e) => commit({ notes: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <footer className="flex items-center justify-between gap-2 px-5 py-3 border-t border-paper-line bg-paper-warm/40">
+          <div className="flex items-center gap-1">
+            <button className="btn btn-icon btn-ghost" onClick={() => moveRow(id, -1)} aria-label="Subir">
+              <ChevronUp size={16} />
+            </button>
+            <button className="btn btn-icon btn-ghost" onClick={() => moveRow(id, 1)} aria-label="Bajar">
+              <ChevronDown size={16} />
+            </button>
+            <button className="btn btn-icon btn-ghost" onClick={() => outdent(id)} aria-label="Outdent">
+              <IndentDecrease size={16} />
+            </button>
+            <button className="btn btn-icon btn-ghost" onClick={() => indent(id)} aria-label="Indent">
+              <IndentIncrease size={16} />
+            </button>
+            <button className="btn btn-icon btn-ghost" onClick={() => duplicateTask(id)} aria-label="Duplicar">
+              <Copy size={16} />
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              className="btn text-accent border-accent/40 hover:bg-accent/10"
+              onClick={() => {
+                deleteTask(id);
+                onClose();
+              }}
+            >
+              <Trash2 size={14} />
+              Eliminar
+            </button>
+            <button className="btn btn-primary" onClick={onClose}>
+              Listo
+            </button>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
