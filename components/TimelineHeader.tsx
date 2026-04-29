@@ -11,6 +11,7 @@ import type { TimeScale } from "@/lib/types";
 import { startOfWeek, getISOWeek, getDate, isFirstDayOfMonth } from "date-fns";
 import clsx from "clsx";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 
 interface Props {
   range: TimelineRange;
@@ -36,6 +37,7 @@ export default function TimelineHeader({
   todayX,
   dayInfo,
 }: Props) {
+  const t = useT();
   const showWeekends = useStore((s) => s.showWeekends);
   const allDays = eachDay(range);
   const days = allDays.filter((_, i) => dayInfo.visible[i]);
@@ -111,7 +113,7 @@ export default function TimelineHeader({
           style={{ left: todayX }}
         >
           <div className="absolute -top-px -translate-x-1/2 left-0 px-1 py-0.5 text-[9px] font-mono text-paper bg-accent rounded-sm">
-            HOY
+            {t.today}
           </div>
         </div>
       )}

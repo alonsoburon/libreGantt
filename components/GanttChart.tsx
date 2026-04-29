@@ -22,6 +22,7 @@ import type { Task, TaskId } from "@/lib/types";
 import TimelineHeader, { TIMELINE_HEADER_H } from "./TimelineHeader";
 import TaskBar from "./TaskBar";
 import DependencyArrows from "./DependencyArrows";
+import { useT } from "@/lib/i18n";
 
 interface Props {
   rowHeight: number;
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export default function GanttChart({ rowHeight, onEdit }: Props) {
+  const t = useT();
   const tasksRaw = useStore((s) => s.tasks);
   const visibleOrder = useStore(useShallow(selectVisibleOrder));
   const project = useStore((s) => s.project);
@@ -387,7 +389,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
           onPointerUp={onCreateRowPointerUp}
           onPointerCancel={() => finishDragCreate(false)}
           data-no-export="true"
-          title="Arrastra para crear una tarea"
+          title={t.drag_create_tip}
         >
           {dragCreate && (() => {
             const a = Math.min(dragCreate.startDay, dragCreate.currentDay);

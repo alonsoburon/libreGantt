@@ -5,6 +5,7 @@ import { X, Trash2, Copy, IndentIncrease, IndentDecrease, ChevronUp, ChevronDown
 import { useStore } from "@/lib/store";
 import { TASK_COLORS, type Task } from "@/lib/types";
 import clsx from "clsx";
+import { useT } from "@/lib/i18n";
 
 interface Props {
   id: string;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function TaskDialog({ id, onClose }: Props) {
+  const tt = useT();
   const task = useStore((s) => s.tasks.find((t) => t.id === id));
   const allTasks = useStore((s) => s.tasks);
   const updateTask = useStore((s) => s.updateTask);
@@ -67,17 +69,17 @@ export default function TaskDialog({ id, onClose }: Props) {
         <header className="flex items-center justify-between px-5 py-3 border-b border-paper-line">
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
-              Editar tarea
+              {tt.edit_task}
             </span>
           </div>
-          <button className="btn btn-icon btn-ghost" onClick={onClose} aria-label="Cerrar">
+          <button className="btn btn-icon btn-ghost" onClick={onClose} aria-label={tt.close}>
             <X size={16} />
           </button>
         </header>
 
         <div className="p-5 space-y-4">
           <div>
-            <label className="field-label">Nombre</label>
+            <label className="field-label">{tt.name}</label>
             <input
               className="field font-sans text-base"
               value={draft.name}
@@ -88,7 +90,7 @@ export default function TaskDialog({ id, onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="field-label">Inicio</label>
+              <label className="field-label">{tt.start}</label>
               <input
                 type="date"
                 className="field"
@@ -102,7 +104,7 @@ export default function TaskDialog({ id, onClose }: Props) {
               />
             </div>
             <div>
-              <label className="field-label">Fin</label>
+              <label className="field-label">{tt.end}</label>
               <input
                 type="date"
                 className="field"
@@ -116,7 +118,7 @@ export default function TaskDialog({ id, onClose }: Props) {
           </div>
 
           <div>
-            <label className="field-label">Progreso ({draft.progress}%)</label>
+            <label className="field-label">{tt.progress} ({draft.progress}%)</label>
             <input
               type="range"
               min={0}
@@ -129,7 +131,7 @@ export default function TaskDialog({ id, onClose }: Props) {
           </div>
 
           <div>
-            <label className="field-label">Presupuesto</label>
+            <label className="field-label">{tt.budget}</label>
             <input
               type="number"
               inputMode="decimal"
@@ -151,7 +153,7 @@ export default function TaskDialog({ id, onClose }: Props) {
           </div>
 
           <div>
-            <label className="field-label">Color</label>
+            <label className="field-label">{tt.color}</label>
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => commit({ color: undefined })}
@@ -159,8 +161,8 @@ export default function TaskDialog({ id, onClose }: Props) {
                   "h-7 w-7 rounded-full border-2 grid place-items-center text-[10px] font-mono",
                   !draft.color ? "border-ink" : "border-paper-line",
                 )}
-                aria-label="Color por defecto"
-                title="Color por defecto"
+                aria-label={tt.default_color}
+                title={tt.default_color}
               >
                 ·
               </button>
@@ -187,8 +189,8 @@ export default function TaskDialog({ id, onClose }: Props) {
                     ? "border-ink"
                     : "border-paper-line",
                 )}
-                title="Color personalizado"
-                aria-label="Color personalizado"
+                title={tt.custom_color}
+                aria-label={tt.custom_color}
                 style={{
                   background:
                     draft.color && !TASK_COLORS.includes(draft.color as any)
@@ -230,10 +232,10 @@ export default function TaskDialog({ id, onClose }: Props) {
           </div>
 
           <div>
-            <label className="field-label">Dependencias (predecesoras)</label>
+            <label className="field-label">{tt.dependencies}</label>
             <div className="max-h-32 overflow-y-auto border border-paper-line rounded-md p-2 space-y-1 bg-paper-warm/40">
               {depCandidates.length === 0 && (
-                <p className="text-xs text-ink-muted px-1 py-0.5">No hay otras tareas.</p>
+                <p className="text-xs text-ink-muted px-1 py-0.5">{tt.no_other_tasks}</p>
               )}
               {depCandidates.map((t) => {
                 const checked = draft.dependencies.includes(t.id);
@@ -262,7 +264,7 @@ export default function TaskDialog({ id, onClose }: Props) {
           </div>
 
           <div>
-            <label className="field-label">Notas</label>
+            <label className="field-label">{tt.notes}</label>
             <textarea
               className="field font-sans"
               rows={2}
@@ -274,19 +276,19 @@ export default function TaskDialog({ id, onClose }: Props) {
 
         <footer className="flex items-center justify-between gap-2 px-5 py-3 border-t border-paper-line bg-paper-warm/40">
           <div className="flex items-center gap-1">
-            <button className="btn btn-icon btn-ghost" onClick={() => moveRow(id, -1)} aria-label="Subir">
+            <button className="btn btn-icon btn-ghost" onClick={() => moveRow(id, -1)} aria-label={tt.up}>
               <ChevronUp size={16} />
             </button>
-            <button className="btn btn-icon btn-ghost" onClick={() => moveRow(id, 1)} aria-label="Bajar">
+            <button className="btn btn-icon btn-ghost" onClick={() => moveRow(id, 1)} aria-label={tt.down}>
               <ChevronDown size={16} />
             </button>
-            <button className="btn btn-icon btn-ghost" onClick={() => outdent(id)} aria-label="Outdent">
+            <button className="btn btn-icon btn-ghost" onClick={() => outdent(id)} aria-label={tt.outdent}>
               <IndentDecrease size={16} />
             </button>
-            <button className="btn btn-icon btn-ghost" onClick={() => indent(id)} aria-label="Indent">
+            <button className="btn btn-icon btn-ghost" onClick={() => indent(id)} aria-label={tt.indent}>
               <IndentIncrease size={16} />
             </button>
-            <button className="btn btn-icon btn-ghost" onClick={() => duplicateTask(id)} aria-label="Duplicar">
+            <button className="btn btn-icon btn-ghost" onClick={() => duplicateTask(id)} aria-label={tt.duplicate}>
               <Copy size={16} />
             </button>
           </div>
@@ -299,10 +301,10 @@ export default function TaskDialog({ id, onClose }: Props) {
               }}
             >
               <Trash2 size={14} />
-              Eliminar
+              {tt.delete}
             </button>
             <button className="btn btn-primary" onClick={onClose}>
-              Listo
+              {tt.done}
             </button>
           </div>
         </footer>
