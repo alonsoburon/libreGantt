@@ -142,7 +142,8 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
       fromId: taskId,
       fromSide: side,
       mouseX: e.clientX - rect.left + chartRef.current.scrollLeft,
-      mouseY: e.clientY - rect.top + chartRef.current.scrollTop,
+      mouseY:
+        e.clientY - rect.top - TIMELINE_HEADER_H + chartRef.current.scrollTop,
     });
   };
 
@@ -156,7 +157,9 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
           ? {
               ...l,
               mouseX: e.clientX - rect.left + chartRef.current!.scrollLeft,
-              mouseY: e.clientY - rect.top + chartRef.current!.scrollTop,
+              mouseY:
+                e.clientY - rect.top - TIMELINE_HEADER_H +
+                chartRef.current!.scrollTop,
             }
           : null,
       );
