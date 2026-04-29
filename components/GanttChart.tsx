@@ -14,6 +14,7 @@ import {
   fromISO,
   isWeekend,
   todayISO,
+  shiftISO,
 } from "@/lib/date-utils";
 import type { Task, TaskId } from "@/lib/types";
 import TimelineHeader, { TIMELINE_HEADER_H } from "./TimelineHeader";
@@ -35,6 +36,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
   const selectedId = useStore((s) => s.selectedId);
   const select = useStore((s) => s.select);
   const updateTask = useStore((s) => s.updateTask);
+  const addTask = useStore((s) => s.addTask);
   const addDependency = useStore((s) => s.addDependency);
   const removeDependency = useStore((s) => s.removeDependency);
 
@@ -81,6 +83,53 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
   } | null>(null);
   const [hoveredTask, setHoveredTask] = useState<TaskId | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
+
+  // Drag-to-create on the empty bottom row
+  const [dragCreate, setDragCreate] = useState<{
+    startDay: number;
+    currentDay: number;
+  } | null>(null);
+
+  const xToDay = (clientX: number): number => {
+    if (!chartRef.current) return 0;
+    const rect = chartRef.current.getBoundingClientRect();
+    const localX = clientX - rect.left + chartRef.current.scrollLeft;
+    return Math.max(0, Math.floor(localX / dayWidth));
+  };
+
+  const onCreateRowPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const day = xToDay(e.clientX);
+    setDragCreate({ startDay: day, currentDay: day });
+  };
+
+  const onCreateRowPointerMove = (e: React.PointerEvent) => {
+    if (!dragCreate) return;
+    setDragCreate({ ...dragCreate, currentDay: xToDay(e.clientX) });
+  };
+
+  const finishDragCreate = (commit: boolean) => {
+    if (!dragCreate) return;
+    if (commit) {
+      const a = Math.min(dragCreate.startDay, dragCreate.currentDay);
+      const b = Math.max(dragCreate.startDay, dragCreate.currentDay);
+      const baseISO = range.start.toISOString().slice(0, 10);
+      const start = shiftISO(baseISO, a);
+      const end = shiftISO(baseISO, b);
+      const id = addTask(null);
+      updateTask(id, { start, end });
+    }
+    setDragCreate(null);
+  };
+
+  const onCreateRowPointerUp = (e: React.PointerEvent) => {
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    finishDragCreate(true);
+  };
 
   const handleLinkStart = (
     taskId: TaskId,
@@ -274,6 +323,38 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
             pending={pending}
           />
         )}
+
+        {/* Drag-to-create row: aligned with the "Nueva tarea" row in the task table */}
+        <div
+          className="absolute left-0 right-0 cursor-crosshair group/create"
+          style={{
+            top: visibleOrder.length * rowHeight,
+            height: rowHeight,
+          }}
+          onPointerDown={onCreateRowPointerDown}
+          onPointerMove={onCreateRowPointerMove}
+          onPointerUp={onCreateRowPointerUp}
+          onPointerCancel={() => finishDragCreate(false)}
+          data-no-export="true"
+          title="Arrastra para crear una tarea"
+        >
+          {dragCreate && (() => {
+            const a = Math.min(dragCreate.startDay, dragCreate.currentDay);
+            const b = Math.max(dragCreate.startDay, dragCreate.currentDay);
+            const left = a * dayWidth;
+            const width = Math.max((b - a + 1) * dayWidth, dayWidth);
+            const barH = Math.max(rowHeight - 14, 18);
+            const top = (rowHeight - barH) / 2;
+            return (
+              <div
+                className="absolute pointer-events-none rounded-md border-2 border-dashed border-ink/60 bg-ink/10 flex items-center px-2 text-[11px] font-mono text-ink-soft"
+                style={{ left, width, top, height: barH }}
+              >
+                {b - a + 1}d
+              </div>
+            );
+          })()}
+        </div>
 
         {/* Linking overlay (catches pointer events to disable text selection) */}
         {linking && (

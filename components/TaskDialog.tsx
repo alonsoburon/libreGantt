@@ -130,7 +130,7 @@ export default function TaskDialog({ id, onClose }: Props) {
 
           <div>
             <label className="field-label">Color</label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => commit({ color: undefined })}
                 className={clsx(
@@ -138,6 +138,7 @@ export default function TaskDialog({ id, onClose }: Props) {
                   !draft.color ? "border-ink" : "border-paper-line",
                 )}
                 aria-label="Color por defecto"
+                title="Color por defecto"
               >
                 ·
               </button>
@@ -151,8 +152,58 @@ export default function TaskDialog({ id, onClose }: Props) {
                   )}
                   style={{ background: c }}
                   aria-label={`Color ${c}`}
+                  title={c}
                 />
               ))}
+
+              <span className="mx-1 h-5 w-px bg-paper-line" aria-hidden />
+
+              <label
+                className={clsx(
+                  "relative h-7 w-7 rounded-full border-2 cursor-pointer overflow-hidden grid place-items-center",
+                  draft.color && !TASK_COLORS.includes(draft.color as any)
+                    ? "border-ink"
+                    : "border-paper-line",
+                )}
+                title="Color personalizado"
+                aria-label="Color personalizado"
+                style={{
+                  background:
+                    draft.color && !TASK_COLORS.includes(draft.color as any)
+                      ? draft.color
+                      : "conic-gradient(from 0deg, #f87171, #fbbf24, #34d399, #60a5fa, #a78bfa, #f87171)",
+                }}
+              >
+                <input
+                  type="color"
+                  value={
+                    draft.color && /^#[0-9a-f]{6}$/i.test(draft.color)
+                      ? draft.color
+                      : "#0E1116"
+                  }
+                  onChange={(e) => commit({ color: e.target.value })}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+              </label>
+
+              <input
+                type="text"
+                value={draft.color ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value.trim();
+                  if (v === "") {
+                    commit({ color: undefined });
+                  } else if (/^#[0-9a-f]{6}$/i.test(v)) {
+                    commit({ color: v });
+                  } else {
+                    setDraft({ ...draft, color: v });
+                  }
+                }}
+                placeholder="#hex"
+                className="field font-mono text-xs w-24 py-1"
+                spellCheck={false}
+                maxLength={7}
+              />
             </div>
           </div>
 

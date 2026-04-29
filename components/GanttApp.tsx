@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Resizable } from "re-resizable";
 import { useStore } from "@/lib/store";
 import Toolbar from "./Toolbar";
 import TaskTable from "./TaskTable";
@@ -73,11 +74,20 @@ export default function GanttApp() {
         >
           <ExportHeader />
           <div className="flex relative">
-            <TaskTable rowHeight={rowHeight} width={taskListW} onEdit={setEditingId} />
-            <ResizeHandle width={taskListW} setWidth={updateTaskListW} />
+            <Resizable
+              size={{ width: taskListW, height: "auto" }}
+              minWidth={TASK_LIST_MIN}
+              maxWidth={TASK_LIST_MAX}
+              enable={{ right: true }}
+              onResizeStop={(_e, _dir, _ref, d) => updateTaskListW(taskListW + d.width)}
+              handleClasses={{ right: "gantt-resize-handle" }}
+              handleStyles={{ right: { width: 6, right: -3, cursor: "col-resize" } }}
+              className="shrink-0"
+            >
+              <TaskTable rowHeight={rowHeight} width={taskListW} onEdit={setEditingId} />
+            </Resizable>
             <GanttChart rowHeight={rowHeight} onEdit={setEditingId} />
           </div>
-          <ExportFooter />
         </div>
       </main>
 
@@ -126,69 +136,3 @@ function clampTaskListW(w: number): number {
   return Math.max(TASK_LIST_MIN, Math.min(TASK_LIST_MAX, Math.round(w)));
 }
 
-function ResizeHandle({
-  width,
-  setWidth,
-}: {
-  width: number;
-  setWidth: (n: number) => void;
-}) {
-  const dragRef = useRef<{ startX: number; startW: number } | null>(null);
-  const [dragging, setDragging] = useState(false);
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    dragRef.current = { startX: e.clientX, startW: width };
-    setDragging(true);
-  };
-
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    setWidth(dragRef.current.startW + dx);
-  };
-
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {}
-    dragRef.current = null;
-    setDragging(false);
-  };
-
-  return (
-    <div
-      role="separator"
-      aria-orientation="vertical"
-      className="relative shrink-0 group cursor-col-resize select-none"
-      style={{ width: 4 }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-      data-no-export="true"
-      title="Arrastra para redimensionar"
-    >
-      <div
-        className={
-          "absolute inset-y-0 left-0 right-0 transition-colors " +
-          (dragging ? "bg-ink/40" : "bg-paper-line group-hover:bg-ink/30")
-        }
-      />
-    </div>
-  );
-}
-
-function ExportFooter() {
-  return (
-    <div
-      className="px-6 py-2 border-t border-paper-line text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono flex justify-between sticky left-0"
-      data-no-export="false"
-    >
-      <span>Generado con gantt · local-first</span>
-      <span>{new Date().toLocaleDateString()}</span>
-    </div>
-  );
-}
