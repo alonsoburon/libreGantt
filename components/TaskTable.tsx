@@ -3,7 +3,6 @@
 import {
   ChevronDown,
   ChevronRight,
-  GripVertical,
   Plus,
   Pencil,
   Trash2,
@@ -15,6 +14,7 @@ import {
   selectVisibleOrder,
   getDepth,
   hasChildren,
+  rolledUpBudget,
 } from "@/lib/store";
 import type { Task } from "@/lib/types";
 
@@ -26,6 +26,11 @@ interface Props {
 
 export const TABLE_HEADER_H = 56;
 
+// Tight column widths so the task list panel can stay compact.
+const COL_DATE = 52; // "MM-DD" in 11px mono
+const COL_BUDGET = 68;
+const COL_PCT = 36;
+
 export default function TaskTable({ rowHeight, width, onEdit }: Props) {
   const tasks = useStore((s) => s.tasks);
   const visibleOrder = useStore(useShallow(selectVisibleOrder));
@@ -35,6 +40,7 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
   const moveRow = useStore((s) => s.moveRow);
   const addTask = useStore((s) => s.addTask);
   const deleteTask = useStore((s) => s.deleteTask);
+  const updateTask = useStore((s) => s.updateTask);
 
   const taskMap = new Map(tasks.map((t) => [t.id, t]));
 
@@ -45,21 +51,37 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
     >
       {/* Header row */}
       <div
-        className="flex items-end px-4 pb-2 border-b border-paper-line bg-paper-warm/40"
+        className="flex items-end px-3 pb-2 border-b border-paper-line bg-paper-warm/40 gap-1"
         style={{ height: TABLE_HEADER_H }}
       >
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
             Tarea
           </div>
         </div>
-        <div className="w-20 text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
+        <div
+          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
+          style={{ width: COL_DATE }}
+        >
           Inicio
         </div>
-        <div className="w-20 text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
+        <div
+          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
+          style={{ width: COL_DATE }}
+        >
           Fin
         </div>
-        <div className="w-12 text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
+        <div
+          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
+          style={{ width: COL_BUDGET }}
+          title="Presupuesto"
+        >
+          $
+        </div>
+        <div
+          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
+          style={{ width: COL_PCT }}
+        >
           %
         </div>
       </div>
@@ -69,12 +91,15 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
         {visibleOrder.map((id) => {
           const task = taskMap.get(id);
           if (!task) return null;
+          const isGroup = hasChildren(tasks, id);
+          const groupBudget = isGroup ? rolledUpBudget(tasks, id) : undefined;
           return (
             <Row
               key={id}
               task={task}
               depth={getDepth(tasks, id)}
-              isGroup={hasChildren(tasks, id)}
+              isGroup={isGroup}
+              groupBudget={groupBudget}
               selected={selectedId === id}
               rowHeight={rowHeight}
               onSelect={() => select(id)}
@@ -83,6 +108,7 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
               onUp={() => moveRow(id, -1)}
               onDown={() => moveRow(id, 1)}
               onAddSub={() => addTask(id)}
+              onBudgetChange={(v) => updateTask(id, { budget: v })}
               onDelete={() => {
                 const t = taskMap.get(id);
                 const name = t?.name ?? "esta tarea";
@@ -99,7 +125,7 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
         {/* Add row */}
         <button
           onClick={() => addTask(null)}
-          className="w-full flex items-center gap-2 px-4 text-sm text-ink-muted hover:text-ink hover:bg-paper-warm/50 transition border-b border-dashed border-paper-line"
+          className="w-full flex items-center gap-2 px-3 text-sm text-ink-muted hover:text-ink hover:bg-paper-warm/50 transition border-b border-dashed border-paper-line"
           style={{ height: rowHeight }}
           data-no-export="true"
         >
@@ -115,6 +141,7 @@ function Row({
   task,
   depth,
   isGroup,
+  groupBudget,
   selected,
   rowHeight,
   onSelect,
@@ -123,11 +150,13 @@ function Row({
   onUp,
   onDown,
   onAddSub,
+  onBudgetChange,
   onDelete,
 }: {
   task: Task;
   depth: number;
   isGroup: boolean;
+  groupBudget: number | undefined;
   selected: boolean;
   rowHeight: number;
   onSelect: () => void;
@@ -136,45 +165,19 @@ function Row({
   onUp: () => void;
   onDown: () => void;
   onAddSub: () => void;
+  onBudgetChange: (v: number | undefined) => void;
   onDelete: () => void;
 }) {
   return (
     <div
       className={clsx(
-        "flex items-center px-2 border-b border-paper-line/70 group cursor-pointer",
+        "relative flex items-center px-3 border-b border-paper-line/70 group cursor-pointer gap-1",
         selected ? "bg-accent/8" : "hover:bg-paper-warm/40",
       )}
       style={{ height: rowHeight }}
       onClick={onSelect}
       onDoubleClick={onEdit}
     >
-      {/* drag handle (display-only / row buttons) */}
-      <div
-        className="opacity-0 group-hover:opacity-100 flex flex-col -my-2 mr-0.5"
-        data-no-export="true"
-      >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onUp();
-          }}
-          className="text-ink-muted hover:text-ink p-0.5"
-          aria-label="Subir"
-        >
-          <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 5 L5 1 L9 5" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDown();
-          }}
-          className="text-ink-muted hover:text-ink p-0.5"
-          aria-label="Bajar"
-        >
-          <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1 L5 5 L9 1" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </button>
-      </div>
-
       {/* indent + collapse */}
       <div style={{ width: depth * 14 }} className="shrink-0" />
       {isGroup ? (
@@ -193,7 +196,7 @@ function Row({
 
       {/* color dot */}
       <span
-        className="ml-1.5 mr-2 h-2 w-2 rounded-full shrink-0"
+        className="ml-1 mr-1.5 h-2 w-2 rounded-full shrink-0"
         style={{ background: task.color ?? (isGroup ? "#0E1116" : "#5B6270") }}
       />
 
@@ -205,24 +208,79 @@ function Row({
             isGroup ? "font-display italic text-base" : "font-sans",
             selected && "text-ink font-semibold",
           )}
+          title={task.name}
         >
           {task.name}
         </div>
       </div>
 
-      {/* dates + progress */}
-      <div className="w-20 text-right text-[11px] font-mono text-ink-muted tabular-nums">
-        {fmt(task.start)}
+      {/* dates */}
+      <div
+        className="text-right text-[11px] font-mono text-ink-muted tabular-nums shrink-0"
+        style={{ width: COL_DATE }}
+      >
+        {fmtDate(task.start)}
       </div>
-      <div className="w-20 text-right text-[11px] font-mono text-ink-muted tabular-nums">
-        {fmt(task.end)}
+      <div
+        className="text-right text-[11px] font-mono text-ink-muted tabular-nums shrink-0"
+        style={{ width: COL_DATE }}
+      >
+        {fmtDate(task.end)}
       </div>
-      <div className="w-12 text-right text-[11px] font-mono text-ink tabular-nums">
+
+      {/* budget */}
+      <div
+        className="text-right text-[11px] font-mono text-ink-muted tabular-nums shrink-0"
+        style={{ width: COL_BUDGET }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {isGroup ? (
+          <span
+            className="block w-full text-right truncate text-ink-soft"
+            title={groupBudget !== undefined ? formatBudgetFull(groupBudget) : ""}
+          >
+            {groupBudget !== undefined ? formatBudgetCompact(groupBudget) : "—"}
+          </span>
+        ) : (
+          <BudgetInput value={task.budget} onChange={onBudgetChange} />
+        )}
+      </div>
+
+      {/* progress */}
+      <div
+        className="text-right text-[11px] font-mono text-ink tabular-nums shrink-0"
+        style={{ width: COL_PCT }}
+      >
         {Math.round(task.progress)}%
       </div>
 
-      {/* row actions */}
-      <div className="flex items-center gap-0.5 ml-2 opacity-0 group-hover:opacity-100" data-no-export="true">
+      {/* row actions — absolute overlay so they never displace the columns */}
+      <div
+        className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 bg-gradient-to-l from-paper-warm via-paper-warm to-paper-warm/0 pl-3 pr-1 rounded"
+        data-no-export="true"
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onUp();
+          }}
+          className="p-1 rounded hover:bg-paper text-ink-muted hover:text-ink"
+          title="Subir"
+          aria-label="Subir"
+        >
+          <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 5 L5 1 L9 5" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDown();
+          }}
+          className="p-1 rounded hover:bg-paper text-ink-muted hover:text-ink"
+          title="Bajar"
+          aria-label="Bajar"
+        >
+          <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1 L5 5 L9 1" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -258,7 +316,57 @@ function Row({
   );
 }
 
-function fmt(iso: string): string {
+function BudgetInput({
+  value,
+  onChange,
+}: {
+  value: number | undefined;
+  onChange: (v: number | undefined) => void;
+}) {
+  return (
+    <input
+      type="number"
+      inputMode="numeric"
+      min={0}
+      step="any"
+      value={value ?? ""}
+      placeholder="—"
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw === "") {
+          onChange(undefined);
+        } else {
+          const n = Number(raw);
+          onChange(Number.isFinite(n) ? n : undefined);
+        }
+      }}
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      className="w-full bg-transparent text-right text-[11px] font-mono tabular-nums text-ink-soft placeholder:text-ink-muted/50 focus:outline-none focus:bg-paper focus:ring-1 focus:ring-ink/15 rounded px-1 py-0.5"
+      title={value !== undefined ? formatBudgetFull(value) : "Presupuesto"}
+    />
+  );
+}
+
+function fmtDate(iso: string): string {
   // Compact MM-DD
   return iso.slice(5);
+}
+
+function formatBudgetCompact(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `$${trim(n / 1_000_000)}M`;
+  if (abs >= 10_000) return `$${trim(n / 1_000)}K`;
+  if (abs >= 1_000) return `$${trim(n / 1_000)}K`;
+  return `$${Math.round(n).toLocaleString("es-CL")}`;
+}
+
+function formatBudgetFull(n: number): string {
+  return `$${Math.round(n).toLocaleString("es-CL")}`;
+}
+
+function trim(n: number): string {
+  // Up to 1 decimal, no trailing zero
+  const r = Math.round(n * 10) / 10;
+  return r.toString();
 }

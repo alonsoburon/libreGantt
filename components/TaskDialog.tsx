@@ -129,6 +129,28 @@ export default function TaskDialog({ id, onClose }: Props) {
           </div>
 
           <div>
+            <label className="field-label">Presupuesto</label>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="any"
+              className="field"
+              value={draft.budget ?? ""}
+              placeholder="0"
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === "") {
+                  commit({ budget: undefined });
+                } else {
+                  const n = Number(raw);
+                  if (Number.isFinite(n)) commit({ budget: n });
+                }
+              }}
+            />
+          </div>
+
+          <div>
             <label className="field-label">Color</label>
             <div className="flex items-center gap-2 flex-wrap">
               <button

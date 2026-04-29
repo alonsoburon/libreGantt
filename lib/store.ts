@@ -358,6 +358,35 @@ export function computeGroupBounds(tasks: Task[]): Task[] {
   });
 }
 
+/** Sum of all descendants' budgets (recursive). Returns undefined if no descendant has a budget. */
+export function rolledUpBudget(tasks: Task[], id: TaskId): number | undefined {
+  const childMap = new Map<TaskId, Task[]>();
+  for (const t of tasks) {
+    if (t.parentId) {
+      const list = childMap.get(t.parentId) ?? [];
+      list.push(t);
+      childMap.set(t.parentId, list);
+    }
+  }
+  let total = 0;
+  let found = false;
+  const walk = (taskId: TaskId) => {
+    const kids = childMap.get(taskId);
+    if (!kids || kids.length === 0) return;
+    for (const k of kids) {
+      const grand = childMap.get(k.id);
+      if (grand && grand.length > 0) {
+        walk(k.id);
+      } else if (typeof k.budget === "number") {
+        total += k.budget;
+        found = true;
+      }
+    }
+  };
+  walk(id);
+  return found ? total : undefined;
+}
+
 function daysBetween(a: string, b: string): number {
   // local helper to avoid circular import
   const da = new Date(a + "T00:00:00");

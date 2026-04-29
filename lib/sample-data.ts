@@ -22,6 +22,7 @@ export function createSampleData(): GanttData {
       progress: 100,
       parentId: "t-discovery",
       dependencies: [],
+      budget: 800000,
     },
     {
       id: "t-requirements",
@@ -31,6 +32,7 @@ export function createSampleData(): GanttData {
       progress: 80,
       parentId: "t-discovery",
       dependencies: ["t-interviews"],
+      budget: 600000,
     },
     {
       id: "t-design",
@@ -50,6 +52,7 @@ export function createSampleData(): GanttData {
       progress: 60,
       parentId: "t-design",
       dependencies: [],
+      budget: 1200000,
     },
     {
       id: "t-mockups",
@@ -59,6 +62,7 @@ export function createSampleData(): GanttData {
       progress: 20,
       parentId: "t-design",
       dependencies: ["t-wireframes"],
+      budget: 1800000,
     },
     {
       id: "t-build",
@@ -69,6 +73,7 @@ export function createSampleData(): GanttData {
       parentId: null,
       dependencies: ["t-design"],
       color: "#4F6F52",
+      budget: 6500000,
     },
     {
       id: "t-launch",
@@ -79,6 +84,7 @@ export function createSampleData(): GanttData {
       parentId: null,
       dependencies: ["t-build"],
       color: "#7C3AED",
+      budget: 500000,
     },
   ];
 
