@@ -17,6 +17,7 @@ import {
   rolledUpBudget,
 } from "@/lib/store";
 import type { Task } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface Props {
   rowHeight: number;
@@ -32,6 +33,7 @@ const COL_BUDGET = 68;
 const COL_PCT = 36;
 
 export default function TaskTable({ rowHeight, width, onEdit }: Props) {
+  const t = useT();
   const tasks = useStore((s) => s.tasks);
   const visibleOrder = useStore(useShallow(selectVisibleOrder));
   const selectedId = useStore((s) => s.selectedId);
@@ -56,25 +58,25 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
       >
         <div className="flex-1 min-w-0">
           <div className="text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
-            Tarea
+            {t.task}
           </div>
         </div>
         <div
           className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
           style={{ width: COL_DATE }}
         >
-          Inicio
+          {t.start}
         </div>
         <div
           className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
           style={{ width: COL_DATE }}
         >
-          Fin
+          {t.end}
         </div>
         <div
           className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
           style={{ width: COL_BUDGET }}
-          title="Presupuesto"
+          title={t.budget}
         >
           $
         </div>
@@ -110,12 +112,10 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
               onAddSub={() => addTask(id)}
               onBudgetChange={(v) => updateTask(id, { budget: v })}
               onDelete={() => {
-                const t = taskMap.get(id);
-                const name = t?.name ?? "esta tarea";
+                const tt = taskMap.get(id);
+                const name = tt?.name ?? t.this_task;
                 const hasKids = hasChildren(tasks, id);
-                const msg = hasKids
-                  ? `Borrar "${name}" y sus subtareas?`
-                  : `Borrar "${name}"?`;
+                const msg = hasKids ? t.delete_with_kids_q(name) : t.delete_q(name);
                 if (confirm(msg)) deleteTask(id);
               }}
             />
@@ -130,7 +130,7 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
           data-no-export="true"
         >
           <Plus size={14} />
-          Nueva tarea
+          {t.new_task}
         </button>
       </div>
     </div>
@@ -168,6 +168,7 @@ function Row({
   onBudgetChange: (v: number | undefined) => void;
   onDelete: () => void;
 }) {
+  const t = useT();
   return (
     <div
       className={clsx(
@@ -265,8 +266,8 @@ function Row({
             onUp();
           }}
           className="p-1 rounded hover:bg-paper text-ink-muted hover:text-ink"
-          title="Subir"
-          aria-label="Subir"
+          title={t.up}
+          aria-label={t.up}
         >
           <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 5 L5 1 L9 5" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
@@ -276,8 +277,8 @@ function Row({
             onDown();
           }}
           className="p-1 rounded hover:bg-paper text-ink-muted hover:text-ink"
-          title="Bajar"
-          aria-label="Bajar"
+          title={t.down}
+          aria-label={t.down}
         >
           <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1 L5 5 L9 1" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
@@ -287,7 +288,7 @@ function Row({
             onAddSub();
           }}
           className="p-1 rounded hover:bg-paper text-ink-muted hover:text-ink"
-          title="Subtarea"
+          title={t.subtask}
         >
           <Plus size={12} />
         </button>
@@ -297,7 +298,7 @@ function Row({
             onEdit();
           }}
           className="p-1 rounded hover:bg-paper text-ink-muted hover:text-ink"
-          title="Editar"
+          title={t.edit}
         >
           <Pencil size={12} />
         </button>
@@ -307,7 +308,7 @@ function Row({
             onDelete();
           }}
           className="p-1 rounded hover:bg-red-50 text-ink-muted hover:text-red-600"
-          title="Borrar"
+          title={t.delete_short}
         >
           <Trash2 size={12} />
         </button>
@@ -343,7 +344,7 @@ function BudgetInput({
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
       className="w-full bg-transparent text-right text-[11px] font-mono tabular-nums text-ink-soft placeholder:text-ink-muted/50 focus:outline-none focus:bg-paper focus:ring-1 focus:ring-ink/15 rounded px-1 py-0.5"
-      title={value !== undefined ? formatBudgetFull(value) : "Presupuesto"}
+      title={value !== undefined ? formatBudgetFull(value) : ""}
     />
   );
 }

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import clsx from "clsx";
 import type { Task } from "@/lib/types";
 import { advanceDays } from "@/lib/date-utils";
+import { useT } from "@/lib/i18n";
 
 type DragMode = "move" | "resize-left" | "resize-right" | null;
 
@@ -47,6 +48,7 @@ export default function TaskBar({
   linkingActive,
   onLinkHover,
 }: Props) {
+  const t = useT();
   const startOffset = leftX;
   const width = Math.max(rightX - leftX, isMilestone ? rowHeight - 12 : 12);
 
@@ -190,7 +192,7 @@ export default function TaskBar({
       {/* The bar body */}
       <div
         className={clsx(
-          "absolute inset-0 rounded-md shadow-bar overflow-hidden transition-shadow",
+          "absolute inset-0 rounded-md shadow-bar transition-shadow",
           drag === "move" && "animate-[pulse-soft_1s_ease-in-out_infinite]",
           selected && "ring-2 ring-offset-2 ring-offset-paper ring-ink",
         )}
@@ -216,15 +218,13 @@ export default function TaskBar({
                    "repeating-linear-gradient(45deg, rgba(255,255,255,0.5) 0 4px, transparent 4px 8px)",
                }} />
         )}
-        {/* Label */}
-        {width >= 48 && (
-          <span className="relative z-10 px-2 h-full flex items-center text-xs font-medium text-paper truncate select-none pointer-events-none mix-blend-normal">
-            {task.name}
-            {task.progress > 0 && (
-              <span className="ml-2 font-mono text-[10px] opacity-80">{task.progress}%</span>
-            )}
-          </span>
-        )}
+        {/* Label — allowed to overflow the bar */}
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-xs font-medium text-paper whitespace-nowrap select-none pointer-events-none drop-shadow-[0_0_2px_rgba(0,0,0,0.35)]">
+          {task.name}
+          {task.progress > 0 && (
+            <span className="ml-2 font-mono text-[10px] opacity-80">{task.progress}%</span>
+          )}
+        </span>
       </div>
 
       {/* Resize handles */}
@@ -249,13 +249,13 @@ export default function TaskBar({
       <button
         className="absolute -left-[7px] top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-paper border-2 border-ink opacity-0 group-hover:opacity-100 hover:scale-125 transition cursor-crosshair"
         onPointerDown={handleLinkStart("left")}
-        title="Conectar (predecesor)"
+        title={t.connect_pred}
         data-no-export="true"
       />
       <button
         className="absolute -right-[7px] top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-paper border-2 border-ink opacity-0 group-hover:opacity-100 hover:scale-125 transition cursor-crosshair"
         onPointerDown={handleLinkStart("right")}
-        title="Conectar (sucesor)"
+        title={t.connect_succ}
         data-no-export="true"
       />
 

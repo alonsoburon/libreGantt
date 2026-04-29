@@ -8,7 +8,9 @@ import TaskTable from "./TaskTable";
 import GanttChart from "./GanttChart";
 import TaskDialog from "./TaskDialog";
 import RestartDialog from "./RestartDialog";
+import LanguageSwitch from "./LanguageSwitch";
 import { format, fromISO } from "@/lib/date-utils";
+import { useT } from "@/lib/i18n";
 
 const TASK_LIST_DEFAULT = 380;
 const TASK_LIST_MIN = 280;
@@ -19,6 +21,7 @@ const BASE_FONT_PX = 14;
 
 export default function GanttApp() {
   const fontScale = useStore((s) => s.fontScale);
+  const t = useT();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [restartOpen, setRestartOpen] = useState(false);
@@ -54,7 +57,7 @@ export default function GanttApp() {
   if (!hydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center text-ink-muted text-sm font-mono">
-        cargando…
+        {t.loading}
       </div>
     );
   }
@@ -93,11 +96,14 @@ export default function GanttApp() {
 
       {editingId && <TaskDialog id={editingId} onClose={() => setEditingId(null)} />}
       {restartOpen && <RestartDialog onClose={() => setRestartOpen(false)} />}
+
+      <LanguageSwitch />
     </div>
   );
 }
 
 function ExportHeader() {
+  const t = useT();
   const project = useStore((s) => s.project);
   const setProject = useStore((s) => s.setProject);
   const tasks = useStore((s) => s.tasks);
@@ -115,7 +121,7 @@ function ExportHeader() {
       <div className="flex items-baseline gap-3 flex-wrap">
         <h1 className="font-display text-3xl italic leading-none">{project.name}</h1>
         <span className="text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
-          {tasks.length} {tasks.length === 1 ? "tarea" : "tareas"}
+          {tasks.length} {tasks.length === 1 ? t.tasks_one : t.tasks_other}
         </span>
         <span className="text-xs font-mono text-ink-muted">
           {format(fromISO(minStart), "d MMM yyyy")} —{" "}
@@ -125,7 +131,7 @@ function ExportHeader() {
       <input
         value={project.description ?? ""}
         onChange={(e) => setProject({ description: e.target.value })}
-        placeholder="Descripción del proyecto…"
+        placeholder={t.project_description_placeholder}
         className="mt-1 w-full max-w-2xl bg-transparent border-none focus:outline-none focus:ring-0 px-0 py-0 text-sm text-ink-soft placeholder:text-ink-muted/60"
       />
     </div>
