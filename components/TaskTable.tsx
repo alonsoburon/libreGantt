@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -28,8 +29,8 @@ interface Props {
 export const TABLE_HEADER_H = 56;
 
 // Tight column widths so the task list panel can stay compact.
-const COL_DATE = 52; // "MM-DD" in 11px mono
-const COL_BUDGET = 68;
+const COL_DATE = 42; // "MM-DD" in 11px mono
+const COL_BUDGET = 96;
 const COL_PCT = 36;
 
 export default function TaskTable({ rowHeight, width, onEdit }: Props) {
@@ -324,17 +325,30 @@ function BudgetInput({
   value: number | undefined;
   onChange: (v: number | undefined) => void;
 }) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState<string>("");
+
+  const display = focused
+    ? draft
+    : value !== undefined
+    ? formatBudgetFull(value)
+    : "";
+
   return (
     <input
-      type="number"
+      type="text"
       inputMode="numeric"
-      min={0}
-      step="any"
-      value={value ?? ""}
+      value={display}
       placeholder="—"
+      onFocus={() => {
+        setFocused(true);
+        setDraft(value !== undefined ? String(value) : "");
+      }}
+      onBlur={() => setFocused(false)}
       onChange={(e) => {
-        const raw = e.target.value;
-        if (raw === "") {
+        const raw = e.target.value.replace(/[^\d.-]/g, "");
+        setDraft(raw);
+        if (raw === "" || raw === "-") {
           onChange(undefined);
         } else {
           const n = Number(raw);

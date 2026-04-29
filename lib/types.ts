@@ -41,4 +41,14 @@ export const TASK_COLORS = [
   "#7C3AED", // violet
   "#B45309", // amber
   "#0E7490", // teal
+  "#BE185D", // magenta
+  "#15803D", // emerald
+  "#1D4ED8", // royal blue
+  "#A16207", // ochre
+  "#9333EA", // purple
+  "#0F766E", // pine
+  "#DC2626", // red
+  "#65A30D", // lime
+  "#0369A1", // sky
+  "#7E22CE", // grape
 ] as const;

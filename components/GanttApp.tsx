@@ -12,7 +12,7 @@ import LanguageSwitch from "./LanguageSwitch";
 import { format, fromISO } from "@/lib/date-utils";
 import { useT } from "@/lib/i18n";
 
-const TASK_LIST_DEFAULT = 380;
+const TASK_LIST_DEFAULT = 420;
 const TASK_LIST_MIN = 280;
 const TASK_LIST_MAX = 900;
 const TASK_LIST_W_KEY = "gantt-task-list-w";
