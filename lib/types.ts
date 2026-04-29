@@ -16,6 +16,8 @@ export interface Task {
   color?: string;
   collapsed?: boolean;
   notes?: string;
+  /** Optional monetary budget (raw number, currency-agnostic) */
+  budget?: number;
 }
 
 export interface Project {
