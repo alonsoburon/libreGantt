@@ -8,6 +8,7 @@ import {
   Pencil,
 } from "lucide-react";
 import clsx from "clsx";
+import { useShallow } from "zustand/react/shallow";
 import {
   useStore,
   selectVisibleOrder,
@@ -26,7 +27,7 @@ export const TABLE_HEADER_H = 56;
 
 export default function TaskTable({ rowHeight, width, onEdit }: Props) {
   const tasks = useStore((s) => s.tasks);
-  const visibleOrder = useStore(selectVisibleOrder);
+  const visibleOrder = useStore(useShallow(selectVisibleOrder));
   const selectedId = useStore((s) => s.selectedId);
   const select = useStore((s) => s.select);
   const toggleCollapse = useStore((s) => s.toggleCollapse);

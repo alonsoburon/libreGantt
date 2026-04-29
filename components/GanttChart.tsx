@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import {
   useStore,
   selectVisibleOrder,
@@ -26,7 +27,7 @@ interface Props {
 
 export default function GanttChart({ rowHeight, onEdit }: Props) {
   const tasksRaw = useStore((s) => s.tasks);
-  const visibleOrder = useStore(selectVisibleOrder);
+  const visibleOrder = useStore(useShallow(selectVisibleOrder));
   const project = useStore((s) => s.project);
   const scale = useStore((s) => s.scale);
   const showDeps = useStore((s) => s.showDependencies);
