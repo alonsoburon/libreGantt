@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { GanttData, Task, TaskId, Project, TimeScale } from "./types";
+import { TASK_COLORS } from "./types";
 import { createSampleData } from "./sample-data";
 import { todayISO } from "./date-utils";
 
@@ -59,6 +60,8 @@ export const useStore = create<State & Actions>()(
       addTask: (parentId = null) => {
         const id = uid();
         const t = todayISO();
+        const existingCount = get().tasks.length;
+        const color = TASK_COLORS[existingCount % TASK_COLORS.length];
         const newTask: Task = {
           id,
           name: "Nueva tarea",
@@ -67,6 +70,7 @@ export const useStore = create<State & Actions>()(
           progress: 0,
           parentId: parentId ?? null,
           dependencies: [],
+          color,
         };
         set((s) => {
           // Insert after parent (or its last descendant), else at end
