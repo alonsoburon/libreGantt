@@ -10,6 +10,7 @@ import {
 import type { TimeScale } from "@/lib/types";
 import { startOfWeek, getISOWeek, getDate, isFirstDayOfMonth } from "date-fns";
 import clsx from "clsx";
+import { useStore } from "@/lib/store";
 
 interface Props {
   range: TimelineRange;
@@ -23,6 +24,7 @@ const HEADER_BOTTOM_H = 30;
 export const TIMELINE_HEADER_H = HEADER_TOP_H + HEADER_BOTTOM_H;
 
 export default function TimelineHeader({ range, scale, dayWidth, todayX }: Props) {
+  const showWeekends = useStore((s) => s.showWeekends);
   const days = eachDay(range);
   const months = groupByMonth(days);
   const totalWidth = days.length * dayWidth;
@@ -77,7 +79,7 @@ export default function TimelineHeader({ range, scale, dayWidth, todayX }: Props
               key={i}
               className={clsx(
                 "shrink-0 border-r flex items-center justify-center font-mono text-[10px] tracking-tight",
-                weekend ? "bg-paper-warm/70" : "",
+                showWeekends && weekend ? "bg-paper-warm/70" : "",
                 isMonthStart ? "border-ink/40" : "border-paper-line/50",
                 strong ? "text-ink" : "text-ink-muted",
               )}

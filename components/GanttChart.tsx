@@ -31,6 +31,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
   const project = useStore((s) => s.project);
   const scale = useStore((s) => s.scale);
   const showDeps = useStore((s) => s.showDependencies);
+  const showWeekends = useStore((s) => s.showWeekends);
   const selectedId = useStore((s) => s.selectedId);
   const select = useStore((s) => s.select);
   const updateTask = useStore((s) => s.updateTask);
@@ -195,7 +196,10 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
                 borderColor: d.monthStart
                   ? "rgba(14,17,22,0.18)"
                   : "rgba(14,17,22,0.06)",
-                background: d.weekend ? "rgba(14,17,22,0.025)" : "transparent",
+                background:
+                  showWeekends && d.weekend
+                    ? "rgba(14,17,22,0.025)"
+                    : "transparent",
               }}
             />
           ))}

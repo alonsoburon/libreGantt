@@ -9,7 +9,10 @@ import TaskDialog from "./TaskDialog";
 import RestartDialog from "./RestartDialog";
 import { format, fromISO } from "@/lib/date-utils";
 
-const TASK_LIST_W = 420;
+const TASK_LIST_DEFAULT = 420;
+const TASK_LIST_MIN = 240;
+const TASK_LIST_MAX = 900;
+const TASK_LIST_W_KEY = "gantt-task-list-w";
 const BASE_ROW_H = 36;
 const BASE_FONT_PX = 14;
 
@@ -19,6 +22,7 @@ export default function GanttApp() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [restartOpen, setRestartOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [taskListW, setTaskListW] = useState(TASK_LIST_DEFAULT);
   const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,6 +33,20 @@ export default function GanttApp() {
     const unsub = useStore.persist.onFinishHydration(() => setHydrated(true));
     return unsub;
   }, []);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(TASK_LIST_W_KEY);
+    if (saved) {
+      const n = parseInt(saved, 10);
+      if (!Number.isNaN(n)) setTaskListW(clampTaskListW(n));
+    }
+  }, []);
+
+  const updateTaskListW = (w: number) => {
+    const next = clampTaskListW(w);
+    setTaskListW(next);
+    localStorage.setItem(TASK_LIST_W_KEY, String(next));
+  };
 
   const rowHeight = Math.round(BASE_ROW_H * Math.max(1, fontScale));
 
@@ -55,7 +73,8 @@ export default function GanttApp() {
         >
           <ExportHeader />
           <div className="flex relative">
-            <TaskTable rowHeight={rowHeight} width={TASK_LIST_W} onEdit={setEditingId} />
+            <TaskTable rowHeight={rowHeight} width={taskListW} onEdit={setEditingId} />
+            <ResizeHandle width={taskListW} setWidth={updateTaskListW} />
             <GanttChart rowHeight={rowHeight} onEdit={setEditingId} />
           </div>
           <ExportFooter />
@@ -70,6 +89,7 @@ export default function GanttApp() {
 
 function ExportHeader() {
   const project = useStore((s) => s.project);
+  const setProject = useStore((s) => s.setProject);
   const tasks = useStore((s) => s.tasks);
   if (tasks.length === 0) {
     return null;
@@ -92,9 +112,71 @@ function ExportHeader() {
           {format(fromISO(maxEnd), "d MMM yyyy")}
         </span>
       </div>
-      {project.description && (
-        <p className="text-sm text-ink-soft mt-1 max-w-2xl">{project.description}</p>
-      )}
+      <input
+        value={project.description ?? ""}
+        onChange={(e) => setProject({ description: e.target.value })}
+        placeholder="Descripción del proyecto…"
+        className="mt-1 w-full max-w-2xl bg-transparent border-none focus:outline-none focus:ring-0 px-0 py-0 text-sm text-ink-soft placeholder:text-ink-muted/60"
+      />
+    </div>
+  );
+}
+
+function clampTaskListW(w: number): number {
+  return Math.max(TASK_LIST_MIN, Math.min(TASK_LIST_MAX, Math.round(w)));
+}
+
+function ResizeHandle({
+  width,
+  setWidth,
+}: {
+  width: number;
+  setWidth: (n: number) => void;
+}) {
+  const dragRef = useRef<{ startX: number; startW: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = { startX: e.clientX, startW: width };
+    setDragging(true);
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    setWidth(dragRef.current.startW + dx);
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    dragRef.current = null;
+    setDragging(false);
+  };
+
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      className="relative shrink-0 group cursor-col-resize select-none"
+      style={{ width: 4 }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      data-no-export="true"
+      title="Arrastra para redimensionar"
+    >
+      <div
+        className={
+          "absolute inset-y-0 left-0 right-0 transition-colors " +
+          (dragging ? "bg-ink/40" : "bg-paper-line group-hover:bg-ink/30")
+        }
+      />
     </div>
   );
 }

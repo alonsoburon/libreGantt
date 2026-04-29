@@ -10,6 +10,7 @@ interface State extends GanttData {
   selectedId: TaskId | null;
   scale: TimeScale;
   showDependencies: boolean;
+  showWeekends: boolean;
   fontScale: number;
 }
 
@@ -26,6 +27,7 @@ interface Actions {
   select: (id: TaskId | null) => void;
   setScale: (s: TimeScale) => void;
   setShowDependencies: (v: boolean) => void;
+  setShowWeekends: (v: boolean) => void;
   setFontScale: (n: number) => void;
   addDependency: (from: TaskId, to: TaskId) => void;
   removeDependency: (from: TaskId, to: TaskId) => void;
@@ -48,6 +50,7 @@ export const useStore = create<State & Actions>()(
       selectedId: null,
       scale: "day",
       showDependencies: true,
+      showWeekends: true,
       fontScale: 1,
 
       setProject: (patch) =>
@@ -192,6 +195,7 @@ export const useStore = create<State & Actions>()(
       select: (id) => set({ selectedId: id }),
       setScale: (s) => set({ scale: s }),
       setShowDependencies: (v) => set({ showDependencies: v }),
+      setShowWeekends: (v) => set({ showWeekends: v }),
       setFontScale: (n) => set({ fontScale: Math.min(1.5, Math.max(0.8, n)) }),
 
       addDependency: (from, to) =>
@@ -273,6 +277,7 @@ export const useStore = create<State & Actions>()(
         order: s.order,
         scale: s.scale,
         showDependencies: s.showDependencies,
+        showWeekends: s.showWeekends,
         fontScale: s.fontScale,
       }),
     },

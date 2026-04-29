@@ -14,6 +14,7 @@ import {
   Calendar,
   CalendarDays,
   CalendarRange,
+  CalendarOff,
 } from "lucide-react";
 import clsx from "clsx";
 import { useStore } from "@/lib/store";
@@ -40,6 +41,8 @@ export default function Toolbar({ exportRef, onRestartClick }: Props) {
   const setScale = useStore((s) => s.setScale);
   const showDeps = useStore((s) => s.showDependencies);
   const setShowDeps = useStore((s) => s.setShowDependencies);
+  const showWeekends = useStore((s) => s.showWeekends);
+  const setShowWeekends = useStore((s) => s.setShowWeekends);
   const fontScale = useStore((s) => s.fontScale);
   const setFontScale = useStore((s) => s.setFontScale);
   const addTask = useStore((s) => s.addTask);
@@ -157,6 +160,15 @@ export default function Toolbar({ exportRef, onRestartClick }: Props) {
         >
           {showDeps ? <Eye size={14} /> : <EyeOff size={14} />}
           Conexiones
+        </button>
+
+        <button
+          onClick={() => setShowWeekends(!showWeekends)}
+          className={clsx("btn", showWeekends && "bg-paper-warm")}
+          title="Mostrar/ocultar fines de semana"
+        >
+          {showWeekends ? <Calendar size={14} /> : <CalendarOff size={14} />}
+          Findes
         </button>
 
         <div className="ml-auto flex items-center gap-2 flex-wrap">

@@ -6,6 +6,7 @@ import {
   GripVertical,
   Plus,
   Pencil,
+  Trash2,
 } from "lucide-react";
 import clsx from "clsx";
 import { useShallow } from "zustand/react/shallow";
@@ -33,6 +34,7 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
   const toggleCollapse = useStore((s) => s.toggleCollapse);
   const moveRow = useStore((s) => s.moveRow);
   const addTask = useStore((s) => s.addTask);
+  const deleteTask = useStore((s) => s.deleteTask);
 
   const taskMap = new Map(tasks.map((t) => [t.id, t]));
 
@@ -81,6 +83,15 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
               onUp={() => moveRow(id, -1)}
               onDown={() => moveRow(id, 1)}
               onAddSub={() => addTask(id)}
+              onDelete={() => {
+                const t = taskMap.get(id);
+                const name = t?.name ?? "esta tarea";
+                const hasKids = hasChildren(tasks, id);
+                const msg = hasKids
+                  ? `Borrar "${name}" y sus subtareas?`
+                  : `Borrar "${name}"?`;
+                if (confirm(msg)) deleteTask(id);
+              }}
             />
           );
         })}
@@ -112,6 +123,7 @@ function Row({
   onUp,
   onDown,
   onAddSub,
+  onDelete,
 }: {
   task: Task;
   depth: number;
@@ -124,6 +136,7 @@ function Row({
   onUp: () => void;
   onDown: () => void;
   onAddSub: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div
@@ -229,6 +242,16 @@ function Row({
           title="Editar"
         >
           <Pencil size={12} />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="p-1 rounded hover:bg-red-50 text-ink-muted hover:text-red-600"
+          title="Borrar"
+        >
+          <Trash2 size={12} />
         </button>
       </div>
     </div>
