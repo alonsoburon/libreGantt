@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import type { Task, TaskId } from "@/lib/types";
-import { fromISO, daysBetween } from "@/lib/date-utils";
 
 interface Props {
   tasks: Task[];
   visibleOrder: TaskId[];
-  rangeStart: Date;
-  dayWidth: number;
+  /** Left edge x for a date's column (matches the bar's leftX in GanttChart). */
+  leftX: (iso: string) => number;
+  /** Right edge x for a date's column (matches the bar's rightX in GanttChart). */
+  rightX: (iso: string) => number;
   rowHeight: number;
   totalWidth: number;
   totalHeight: number;
@@ -25,8 +26,8 @@ interface Props {
 export default function DependencyArrows({
   tasks,
   visibleOrder,
-  rangeStart,
-  dayWidth,
+  leftX,
+  rightX,
   rowHeight,
   totalWidth,
   totalHeight,
@@ -48,9 +49,9 @@ export default function DependencyArrows({
       const fromIdx = rowIndex.get(fromId);
       if (!pred || fromIdx === undefined) continue;
 
-      const srcX = ((fromISO(pred.end).getTime() - rangeStart.getTime()) / 86400000) * dayWidth + dayWidth;
+      const srcX = rightX(pred.end);
       const srcY = fromIdx * rowHeight + rowHeight / 2;
-      const dstX = ((fromISO(task.start).getTime() - rangeStart.getTime()) / 86400000) * dayWidth;
+      const dstX = leftX(task.start);
       const dstY = toIdx * rowHeight + rowHeight / 2;
 
       const d = buildPath(srcX, srcY, dstX, dstY);

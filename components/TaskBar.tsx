@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import clsx from "clsx";
 import type { Task } from "@/lib/types";
-import { daysBetween, shiftISO, fromISO } from "@/lib/date-utils";
+import { advanceDays } from "@/lib/date-utils";
 
 type DragMode = "move" | "resize-left" | "resize-right" | null;
 
@@ -11,9 +11,15 @@ interface Props {
   task: Task;
   isGroup: boolean;
   isMilestone: boolean;
-  rangeStart: Date;
+  /** Pre-computed left edge of the bar (start of the start day's column). */
+  leftX: number;
+  /** Pre-computed right edge of the bar (end of the end day's column). */
+  rightX: number;
+  /** Pixel width per visible day. Used to translate drag deltas to days. */
   dayWidth: number;
   rowHeight: number;
+  /** When true, drag deltas walk over weekends (skipping Sat/Sun). */
+  hideWeekends: boolean;
   selected: boolean;
   onSelect: () => void;
   onEdit: () => void;
@@ -28,9 +34,11 @@ export default function TaskBar({
   task,
   isGroup,
   isMilestone,
-  rangeStart,
+  leftX,
+  rightX,
   dayWidth,
   rowHeight,
+  hideWeekends,
   selected,
   onSelect,
   onEdit,
@@ -39,11 +47,8 @@ export default function TaskBar({
   linkingActive,
   onLinkHover,
 }: Props) {
-  const startOffset = Math.round(
-    ((fromISO(task.start).getTime() - rangeStart.getTime()) / 86400000) * dayWidth,
-  );
-  const durationDays = daysBetween(task.start, task.end) + 1;
-  const width = Math.max(durationDays * dayWidth, isMilestone ? rowHeight - 12 : 12);
+  const startOffset = leftX;
+  const width = Math.max(rightX - leftX, isMilestone ? rowHeight - 12 : 12);
 
   const [drag, setDrag] = useState<DragMode>(null);
   const dragRef = useRef<{
@@ -74,16 +79,24 @@ export default function TaskBar({
     const daysDelta = Math.round(dx / dayWidth);
     if (drag === "move") {
       onUpdate({
-        start: shiftISO(dragRef.current.origStart, daysDelta),
-        end: shiftISO(dragRef.current.origEnd, daysDelta),
+        start: advanceDays(dragRef.current.origStart, daysDelta, hideWeekends),
+        end: advanceDays(dragRef.current.origEnd, daysDelta, hideWeekends),
       });
     } else if (drag === "resize-left") {
-      const newStart = shiftISO(dragRef.current.origStart, daysDelta);
+      const newStart = advanceDays(
+        dragRef.current.origStart,
+        daysDelta,
+        hideWeekends,
+      );
       if (newStart <= dragRef.current.origEnd) {
         onUpdate({ start: newStart });
       }
     } else if (drag === "resize-right") {
-      const newEnd = shiftISO(dragRef.current.origEnd, daysDelta);
+      const newEnd = advanceDays(
+        dragRef.current.origEnd,
+        daysDelta,
+        hideWeekends,
+      );
       if (newEnd >= dragRef.current.origStart) {
         onUpdate({ end: newEnd });
       }

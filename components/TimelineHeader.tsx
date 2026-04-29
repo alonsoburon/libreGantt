@@ -17,17 +17,30 @@ interface Props {
   scale: TimeScale;
   dayWidth: number;
   todayX: number | null;
+  /** Same dayInfo computed in GanttChart so headers and grid stay aligned. */
+  dayInfo: {
+    visible: boolean[];
+    prefix: number[];
+    visibleCount: number;
+  };
 }
 
 const HEADER_TOP_H = 26;
 const HEADER_BOTTOM_H = 30;
 export const TIMELINE_HEADER_H = HEADER_TOP_H + HEADER_BOTTOM_H;
 
-export default function TimelineHeader({ range, scale, dayWidth, todayX }: Props) {
+export default function TimelineHeader({
+  range,
+  scale,
+  dayWidth,
+  todayX,
+  dayInfo,
+}: Props) {
   const showWeekends = useStore((s) => s.showWeekends);
-  const days = eachDay(range);
+  const allDays = eachDay(range);
+  const days = allDays.filter((_, i) => dayInfo.visible[i]);
   const months = groupByMonth(days);
-  const totalWidth = days.length * dayWidth;
+  const totalWidth = dayInfo.visibleCount * dayWidth;
 
   return (
     <div

@@ -95,3 +95,20 @@ export function groupByWeek(days: Date[]): { label: string; span: number }[] {
 }
 
 export { format, isWeekend };
+
+/** Step `n` calendar or visible days (skipping weekends when hideWeekends). */
+export function advanceDays(
+  iso: string,
+  n: number,
+  hideWeekends: boolean,
+): string {
+  if (!hideWeekends || n === 0) return shiftISO(iso, n);
+  let d = fromISO(iso);
+  let remaining = Math.abs(n);
+  const dir = n > 0 ? 1 : -1;
+  while (remaining > 0) {
+    d = addDays(d, dir);
+    if (!isWeekend(d)) remaining--;
+  }
+  return toISODate(d);
+}

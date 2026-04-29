@@ -15,6 +15,8 @@ import {
   isWeekend,
   todayISO,
   shiftISO,
+  advanceDays,
+  toISODate,
 } from "@/lib/date-utils";
 import type { Task, TaskId } from "@/lib/types";
 import TimelineHeader, { TIMELINE_HEADER_H } from "./TimelineHeader";
@@ -44,6 +46,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
   const tasks = useMemo(() => computeGroupBounds(tasksRaw), [tasksRaw]);
 
   const dayWidth = scale === "day" ? 40 : scale === "week" ? 18 : 8;
+  const hideWeekends = !showWeekends;
 
   const range = useMemo(
     () =>
@@ -55,17 +58,57 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
     [tasks, project.startDate],
   );
 
-  const totalWidth = range.totalDays * dayWidth;
+  // Per-day metadata + cumulative visible-x mapping.
+  // `prefix[i]` = number of visible days strictly before calendar day i.
+  // For day i:  leftX = prefix[i] * dayWidth, rightX = prefix[i+1] * dayWidth.
+  // Hidden weekend columns collapse to zero width.
+  const dayInfo = useMemo(() => {
+    const visible: boolean[] = new Array(range.totalDays);
+    const prefix: number[] = new Array(range.totalDays + 1);
+    prefix[0] = 0;
+    for (let i = 0; i < range.totalDays; i++) {
+      const d = new Date(range.start.getTime() + i * 86400000);
+      const v = hideWeekends ? !isWeekend(d) : true;
+      visible[i] = v;
+      prefix[i + 1] = prefix[i] + (v ? 1 : 0);
+    }
+    return { visible, prefix, visibleCount: prefix[range.totalDays] };
+  }, [range, hideWeekends]);
+
+  const totalWidth = dayInfo.visibleCount * dayWidth;
   const totalRowsHeight = visibleOrder.length * rowHeight + rowHeight; // +1 for trailing empty row
   const totalHeight = totalRowsHeight;
 
-  const todayDays = daysBetween(
-    range.start.toISOString().slice(0, 10),
-    todayISO(),
-  );
+  const dayIndexFromISO = (iso: string): number => {
+    const idx = daysBetween(toISODate(range.start), iso);
+    return Math.max(0, Math.min(range.totalDays - 1, idx));
+  };
+
+  const leftX = (iso: string): number =>
+    dayInfo.prefix[dayIndexFromISO(iso)] * dayWidth;
+  const rightX = (iso: string): number =>
+    dayInfo.prefix[dayIndexFromISO(iso) + 1] * dayWidth;
+
+  // Snap a chart-local X to a calendar day index, biased to the nearest
+  // visible column. Used for drag-to-create.
+  const calendarDayFromX = (localX: number): number => {
+    const visIdx = Math.max(
+      0,
+      Math.min(dayInfo.visibleCount - 1, Math.floor(localX / dayWidth)),
+    );
+    // find the calendar day i where prefix[i] === visIdx and visible[i]
+    for (let i = 0; i < range.totalDays; i++) {
+      if (dayInfo.visible[i] && dayInfo.prefix[i] === visIdx) return i;
+    }
+    return 0;
+  };
+
+  const todayDays = daysBetween(toISODate(range.start), todayISO());
   const todayX =
-    todayDays >= 0 && todayDays <= range.totalDays
-      ? todayDays * dayWidth
+    todayDays >= 0 &&
+    todayDays < range.totalDays &&
+    dayInfo.visible[todayDays]
+      ? dayInfo.prefix[todayDays] * dayWidth
       : null;
 
   const rowIndex = useMemo(() => {
@@ -94,7 +137,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
     if (!chartRef.current) return 0;
     const rect = chartRef.current.getBoundingClientRect();
     const localX = clientX - rect.left + chartRef.current.scrollLeft;
-    return Math.max(0, Math.floor(localX / dayWidth));
+    return calendarDayFromX(localX);
   };
 
   const onCreateRowPointerDown = (e: React.PointerEvent) => {
@@ -115,7 +158,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
     if (commit) {
       const a = Math.min(dragCreate.startDay, dragCreate.currentDay);
       const b = Math.max(dragCreate.startDay, dragCreate.currentDay);
-      const baseISO = range.start.toISOString().slice(0, 10);
+      const baseISO = toISODate(range.start);
       const start = shiftISO(baseISO, a);
       const end = shiftISO(baseISO, b);
       const id = addTask(null);
@@ -200,13 +243,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
     if (!t) return null;
     const idx = rowIndex.get(t.id);
     if (idx === undefined) return null;
-    const fromX =
-      linking.fromSide === "right"
-        ? ((fromISO(t.end).getTime() - range.start.getTime()) / 86400000) *
-            dayWidth +
-          dayWidth
-        : ((fromISO(t.start).getTime() - range.start.getTime()) / 86400000) *
-          dayWidth;
+    const fromX = linking.fromSide === "right" ? rightX(t.end) : leftX(t.start);
     const fromY = idx * rowHeight + rowHeight / 2;
     return {
       fromX,
@@ -214,25 +251,34 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
       toX: linking.mouseX,
       toY: linking.mouseY,
     };
-  }, [linking, tasks, rowIndex, range.start, dayWidth, rowHeight]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linking, tasks, rowIndex, range.start, dayWidth, rowHeight, dayInfo]);
 
-  // Day-strip backgrounds (weekend + today + month dividers)
+  // Day-strip backgrounds — only visible columns are emitted, so hidden
+  // weekends fully collapse (no shading, no width).
   const dayBgs = useMemo(() => {
-    const out: { x: number; weekend: boolean; monthStart: boolean }[] = [];
+    const out: { x: number; monthStart: boolean; weekend: boolean }[] = [];
     for (let i = 0; i < range.totalDays; i++) {
+      if (!dayInfo.visible[i]) continue;
       const d = new Date(range.start.getTime() + i * 86400000);
       out.push({
-        x: i * dayWidth,
-        weekend: isWeekend(d),
+        x: dayInfo.prefix[i] * dayWidth,
         monthStart: d.getDate() === 1,
+        weekend: isWeekend(d),
       });
     }
     return out;
-  }, [range, dayWidth]);
+  }, [range, dayWidth, dayInfo]);
 
   return (
     <div ref={chartRef} className="relative grow shrink-0" style={{ width: totalWidth }}>
-      <TimelineHeader range={range} scale={scale} dayWidth={dayWidth} todayX={todayX} />
+      <TimelineHeader
+        range={range}
+        scale={scale}
+        dayWidth={dayWidth}
+        todayX={todayX}
+        dayInfo={dayInfo}
+      />
 
       {/* Body */}
       <div className="relative" style={{ height: totalHeight, width: totalWidth }}>
@@ -297,9 +343,11 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
                 task={t}
                 isGroup={isGroup}
                 isMilestone={isMilestone}
-                rangeStart={range.start}
+                leftX={leftX(t.start)}
+                rightX={rightX(t.end)}
                 dayWidth={dayWidth}
                 rowHeight={rowHeight}
+                hideWeekends={hideWeekends}
                 selected={selectedId === id}
                 onSelect={() => select(id)}
                 onEdit={() => onEdit(id)}
@@ -317,8 +365,8 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
           <DependencyArrows
             tasks={tasks}
             visibleOrder={visibleOrder}
-            rangeStart={range.start}
-            dayWidth={dayWidth}
+            leftX={leftX}
+            rightX={rightX}
             rowHeight={rowHeight}
             totalWidth={totalWidth}
             totalHeight={totalHeight}
@@ -344,8 +392,9 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
           {dragCreate && (() => {
             const a = Math.min(dragCreate.startDay, dragCreate.currentDay);
             const b = Math.max(dragCreate.startDay, dragCreate.currentDay);
-            const left = a * dayWidth;
-            const width = Math.max((b - a + 1) * dayWidth, dayWidth);
+            const left = dayInfo.prefix[a] * dayWidth;
+            const right = dayInfo.prefix[b + 1] * dayWidth;
+            const width = Math.max(right - left, dayWidth);
             const barH = Math.max(rowHeight - 14, 18);
             const top = (rowHeight - barH) / 2;
             return (
