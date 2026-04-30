@@ -13,6 +13,7 @@ interface State extends GanttData {
   showDependencies: boolean;
   showWeekends: boolean;
   fontScale: number;
+  zoom: number;
 }
 
 interface Actions {
@@ -30,6 +31,7 @@ interface Actions {
   setShowDependencies: (v: boolean) => void;
   setShowWeekends: (v: boolean) => void;
   setFontScale: (n: number) => void;
+  setZoom: (n: number) => void;
   addDependency: (from: TaskId, to: TaskId) => void;
   removeDependency: (from: TaskId, to: TaskId) => void;
   loadData: (data: GanttData) => void;
@@ -53,6 +55,7 @@ export const useStore = create<State & Actions>()(
       showDependencies: true,
       showWeekends: true,
       fontScale: 1,
+      zoom: 1,
 
       setProject: (patch) =>
         set((s) => ({ project: { ...s.project, ...patch } })),
@@ -201,6 +204,7 @@ export const useStore = create<State & Actions>()(
       setShowDependencies: (v) => set({ showDependencies: v }),
       setShowWeekends: (v) => set({ showWeekends: v }),
       setFontScale: (n) => set({ fontScale: Math.min(1.5, Math.max(0.8, n)) }),
+      setZoom: (n) => set({ zoom: Math.min(2, Math.max(0.25, n)) }),
 
       addDependency: (from, to) =>
         set((s) => {
@@ -283,6 +287,7 @@ export const useStore = create<State & Actions>()(
         showDependencies: s.showDependencies,
         showWeekends: s.showWeekends,
         fontScale: s.fontScale,
+        zoom: s.zoom,
       }),
     },
   ),

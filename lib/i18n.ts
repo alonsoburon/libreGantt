@@ -72,6 +72,8 @@ const dict = {
     add_task: "Tarea",
     expand_toolbar: "Expandir barra",
     collapse_toolbar: "Comprimir barra",
+    zoom: "Zoom",
+    zoom_tip: "Comprimir/expandir el gantt horizontalmente",
   },
   en: {
     loading: "loading…",
@@ -139,6 +141,8 @@ const dict = {
     add_task: "Task",
     expand_toolbar: "Expand bar",
     collapse_toolbar: "Compress bar",
+    zoom: "Zoom",
+    zoom_tip: "Compress/expand the gantt horizontally",
   },
 } as const;
 

@@ -15,6 +15,7 @@ import {
   CalendarDays,
   CalendarRange,
   CalendarOff,
+  MoveHorizontal,
 } from "lucide-react";
 import clsx from "clsx";
 import { useStore } from "@/lib/store";
@@ -45,6 +46,8 @@ export default function Toolbar({ exportRef, onRestartClick }: Props) {
   const setShowWeekends = useStore((s) => s.setShowWeekends);
   const fontScale = useStore((s) => s.fontScale);
   const setFontScale = useStore((s) => s.setFontScale);
+  const zoom = useStore((s) => s.zoom);
+  const setZoom = useStore((s) => s.setZoom);
   const addTask = useStore((s) => s.addTask);
   const loadData = useStore((s) => s.loadData);
 
@@ -217,6 +220,27 @@ export default function Toolbar({ exportRef, onRestartClick }: Props) {
             {showWeekends ? <Calendar size={14} /> : <CalendarOff size={14} />}
             {t.weekends}
           </button>
+
+          <div
+            className="flex items-center gap-2 px-2 py-1 bg-paper-warm rounded-md border border-paper-line"
+            title={t.zoom_tip}
+          >
+            <MoveHorizontal size={14} className="text-ink-muted" />
+            <input
+              type="range"
+              min={0.25}
+              max={2}
+              step={0.05}
+              value={zoom}
+              onChange={(e) => setZoom(parseFloat(e.target.value))}
+              onDoubleClick={() => setZoom(1)}
+              className="gantt-zoom-slider w-24 accent-ink"
+              aria-label={t.zoom}
+            />
+            <span className="text-[10px] font-mono text-ink-muted tabular-nums w-9 text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+          </div>
 
           <div className="ml-auto flex items-center gap-2 flex-wrap">
             <button onClick={() => addTask(null)} className="btn btn-primary">

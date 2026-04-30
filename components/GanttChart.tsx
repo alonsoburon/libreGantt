@@ -35,6 +35,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
   const visibleOrder = useStore(useShallow(selectVisibleOrder));
   const project = useStore((s) => s.project);
   const scale = useStore((s) => s.scale);
+  const zoom = useStore((s) => s.zoom);
   const showDeps = useStore((s) => s.showDependencies);
   const showWeekends = useStore((s) => s.showWeekends);
   const selectedId = useStore((s) => s.selectedId);
@@ -47,7 +48,8 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
   // Compute group bounds from children for display
   const tasks = useMemo(() => computeGroupBounds(tasksRaw), [tasksRaw]);
 
-  const dayWidth = scale === "day" ? 40 : scale === "week" ? 18 : 8;
+  const baseDayWidth = scale === "day" ? 40 : scale === "week" ? 18 : 8;
+  const dayWidth = Math.max(1, baseDayWidth * zoom);
   const hideWeekends = !showWeekends;
 
   const range = useMemo(
