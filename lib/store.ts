@@ -12,6 +12,8 @@ interface State extends GanttData {
   scale: TimeScale;
   showDependencies: boolean;
   showWeekends: boolean;
+  showToday: boolean;
+  labelsOutside: boolean;
   fontScale: number;
   zoom: number;
 }
@@ -30,6 +32,8 @@ interface Actions {
   setScale: (s: TimeScale) => void;
   setShowDependencies: (v: boolean) => void;
   setShowWeekends: (v: boolean) => void;
+  setShowToday: (v: boolean) => void;
+  setLabelsOutside: (v: boolean) => void;
   setFontScale: (n: number) => void;
   setZoom: (n: number) => void;
   addDependency: (from: TaskId, to: TaskId) => void;
@@ -54,6 +58,8 @@ export const useStore = create<State & Actions>()(
       scale: "day",
       showDependencies: true,
       showWeekends: true,
+      showToday: true,
+      labelsOutside: false,
       fontScale: 1,
       zoom: 1,
 
@@ -203,6 +209,8 @@ export const useStore = create<State & Actions>()(
       setScale: (s) => set({ scale: s }),
       setShowDependencies: (v) => set({ showDependencies: v }),
       setShowWeekends: (v) => set({ showWeekends: v }),
+      setShowToday: (v) => set({ showToday: v }),
+      setLabelsOutside: (v) => set({ labelsOutside: v }),
       setFontScale: (n) => set({ fontScale: Math.min(1.5, Math.max(0.8, n)) }),
       setZoom: (n) => set({ zoom: Math.min(2, Math.max(0.25, n)) }),
 
@@ -286,6 +294,8 @@ export const useStore = create<State & Actions>()(
         scale: s.scale,
         showDependencies: s.showDependencies,
         showWeekends: s.showWeekends,
+        showToday: s.showToday,
+        labelsOutside: s.labelsOutside,
         fontScale: s.fontScale,
         zoom: s.zoom,
       }),

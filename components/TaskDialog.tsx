@@ -264,6 +264,18 @@ export default function TaskDialog({ id, onClose }: Props) {
           </div>
 
           <div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={!!draft.hideLabel}
+                onChange={(e) => commit({ hideLabel: e.target.checked })}
+                className="accent-ink"
+              />
+              <span>{tt.hide_label}</span>
+            </label>
+          </div>
+
+          <div>
             <label className="field-label">{tt.notes}</label>
             <textarea
               className="field font-sans"

@@ -85,7 +85,7 @@ export default function GanttApp() {
               onResizeStop={(_e, _dir, _ref, d) => updateTaskListW(taskListW + d.width)}
               handleClasses={{ right: "gantt-resize-handle" }}
               handleStyles={{ right: { width: 6, right: -3, cursor: "col-resize" } }}
-              className="shrink-0"
+              className="shrink-0 gantt-task-list-panel"
             >
               <TaskTable rowHeight={rowHeight} width={taskListW} onEdit={setEditingId} />
             </Resizable>

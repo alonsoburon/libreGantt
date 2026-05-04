@@ -19,6 +19,7 @@ import {
 } from "@/lib/store";
 import type { Task } from "@/lib/types";
 import { useT } from "@/lib/i18n";
+import { daysBetween } from "@/lib/date-utils";
 
 interface Props {
   rowHeight: number;
@@ -30,6 +31,7 @@ export const TABLE_HEADER_H = 56;
 
 // Tight column widths so the task list panel can stay compact.
 const COL_DATE = 42; // "MM-DD" in 11px mono
+const COL_DUR = 32; // small "D" column with day count
 const COL_BUDGET = 96;
 const COL_PCT = 36;
 
@@ -49,6 +51,7 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
 
   return (
     <div
+      data-task-table
       className="sticky left-0 z-20 bg-paper border-r border-paper-line shrink-0"
       style={{ width }}
     >
@@ -57,7 +60,7 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
         className="flex items-end px-3 pb-2 border-b border-paper-line bg-paper-warm/40 gap-1"
         style={{ height: TABLE_HEADER_H }}
       >
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" data-name-cell>
           <div className="text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
             {t.task}
           </div>
@@ -73,6 +76,13 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
           style={{ width: COL_DATE }}
         >
           {t.end}
+        </div>
+        <div
+          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
+          style={{ width: COL_DUR }}
+          title={t.duration}
+        >
+          {t.duration_short}
         </div>
         <div
           className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
@@ -203,7 +213,7 @@ function Row({
       />
 
       {/* name */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0" data-name-cell>
         <div
           className={clsx(
             "truncate text-sm",
@@ -228,6 +238,16 @@ function Row({
         style={{ width: COL_DATE }}
       >
         {fmtDate(task.end)}
+      </div>
+
+      {/* duration (end - start + 1, inclusive) */}
+      <div
+        className="text-right text-[11px] font-mono text-ink-muted tabular-nums shrink-0"
+        style={{ width: COL_DUR }}
+        title={t.duration}
+      >
+        {durationDays(task.start, task.end)}
+        <span className="text-ink-muted/60 ml-0.5">{t.days_short}</span>
       </div>
 
       {/* budget */}
@@ -366,6 +386,11 @@ function BudgetInput({
 function fmtDate(iso: string): string {
   // Compact MM-DD
   return iso.slice(5);
+}
+
+function durationDays(start: string, end: string): number {
+  // Inclusive day count: a single-day task is 1 day.
+  return Math.max(0, daysBetween(start, end) + 1);
 }
 
 function formatBudgetCompact(n: number): string {
