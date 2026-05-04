@@ -38,6 +38,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
   const zoom = useStore((s) => s.zoom);
   const showDeps = useStore((s) => s.showDependencies);
   const showWeekends = useStore((s) => s.showWeekends);
+  const showToday = useStore((s) => s.showToday);
   const selectedId = useStore((s) => s.selectedId);
   const select = useStore((s) => s.select);
   const updateTask = useStore((s) => s.updateTask);
@@ -109,6 +110,7 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
 
   const todayDays = daysBetween(toISODate(range.start), todayISO());
   const todayX =
+    showToday &&
     todayDays >= 0 &&
     todayDays < range.totalDays &&
     dayInfo.visible[todayDays]
@@ -285,7 +287,12 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
       />
 
       {/* Body */}
-      <div className="relative" style={{ height: totalHeight, width: totalWidth }}>
+      <div
+        className={
+          "relative" + (linking ? " cursor-crosshair select-none" : "")
+        }
+        style={{ height: totalHeight, width: totalWidth }}
+      >
         {/* Background grid */}
         <div className="absolute inset-0 pointer-events-none">
           {dayBgs.map((d, i) => (
@@ -412,14 +419,6 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
           })()}
         </div>
 
-        {/* Linking overlay (catches pointer events to disable text selection) */}
-        {linking && (
-          <div
-            className="absolute inset-0 cursor-crosshair"
-            data-no-export="true"
-            style={{ background: "transparent" }}
-          />
-        )}
       </div>
     </div>
   );

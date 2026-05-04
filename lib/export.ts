@@ -4,21 +4,30 @@ import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 
 async function snapshot(node: HTMLElement): Promise<string> {
-  // Higher pixel ratio for crisp output
-  return await toPng(node, {
-    pixelRatio: 2,
-    cacheBust: true,
-    backgroundColor: "#FAFAF7",
-    style: {
-      // Preserve fonts in the export
-      fontFamily: getComputedStyle(node).fontFamily,
-    },
-    filter: (n) => {
-      // exclude elements explicitly marked as no-export
-      if (n instanceof HTMLElement && n.dataset.noExport === "true") return false;
-      return true;
-    },
-  });
+  // While snapshotting, expand the task list panel and remove name
+  // truncation so column contents are fully readable in the export.
+  node.classList.add("gantt-exporting");
+  // Force layout to settle with the new styles before capturing.
+  void node.offsetHeight;
+  try {
+    // Higher pixel ratio for crisp output
+    return await toPng(node, {
+      pixelRatio: 2,
+      cacheBust: true,
+      backgroundColor: "#FAFAF7",
+      style: {
+        // Preserve fonts in the export
+        fontFamily: getComputedStyle(node).fontFamily,
+      },
+      filter: (n) => {
+        // exclude elements explicitly marked as no-export
+        if (n instanceof HTMLElement && n.dataset.noExport === "true") return false;
+        return true;
+      },
+    });
+  } finally {
+    node.classList.remove("gantt-exporting");
+  }
 }
 
 export async function exportPNG(node: HTMLElement, filename = "gantt.png") {

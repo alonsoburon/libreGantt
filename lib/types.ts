@@ -18,6 +18,8 @@ export interface Task {
   notes?: string;
   /** Optional monetary budget (raw number, currency-agnostic) */
   budget?: number;
+  /** When true, the task name is not rendered on the bar (still visible in the sidebar). */
+  hideLabel?: boolean;
 }
 
 export interface Project {

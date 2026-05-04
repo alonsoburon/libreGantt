@@ -16,6 +16,8 @@ import {
   CalendarRange,
   CalendarOff,
   MoveHorizontal,
+  CircleDot,
+  Tag,
 } from "lucide-react";
 import clsx from "clsx";
 import { useStore } from "@/lib/store";
@@ -44,6 +46,10 @@ export default function Toolbar({ exportRef, onRestartClick }: Props) {
   const setShowDeps = useStore((s) => s.setShowDependencies);
   const showWeekends = useStore((s) => s.showWeekends);
   const setShowWeekends = useStore((s) => s.setShowWeekends);
+  const showToday = useStore((s) => s.showToday);
+  const setShowToday = useStore((s) => s.setShowToday);
+  const labelsOutside = useStore((s) => s.labelsOutside);
+  const setLabelsOutside = useStore((s) => s.setLabelsOutside);
   const fontScale = useStore((s) => s.fontScale);
   const setFontScale = useStore((s) => s.setFontScale);
   const zoom = useStore((s) => s.zoom);
@@ -219,6 +225,27 @@ export default function Toolbar({ exportRef, onRestartClick }: Props) {
           >
             {showWeekends ? <Calendar size={14} /> : <CalendarOff size={14} />}
             {t.weekends}
+          </button>
+
+          <button
+            onClick={() => setShowToday(!showToday)}
+            className={clsx("btn", showToday && "bg-paper-warm")}
+            title={t.today_marker_toggle}
+          >
+            <CircleDot
+              size={14}
+              className={showToday ? "text-accent" : "text-ink-muted"}
+            />
+            {t.today_marker}
+          </button>
+
+          <button
+            onClick={() => setLabelsOutside(!labelsOutside)}
+            className={clsx("btn", labelsOutside && "bg-paper-warm")}
+            title={t.labels_outside_toggle}
+          >
+            <Tag size={14} />
+            {t.labels_outside}
           </button>
 
           <div

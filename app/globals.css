@@ -128,3 +128,22 @@ label.field-label {
   opacity: 1;
   background: theme("colors.ink.DEFAULT");
 }
+
+/* While exporting (PDF/PNG), let the task list panel grow to fit column
+   contents and disable name truncation so all text is fully visible. */
+.gantt-exporting .gantt-task-list-panel {
+  width: max-content !important;
+  min-width: max-content !important;
+}
+.gantt-exporting [data-task-table] {
+  width: max-content !important;
+  min-width: max-content;
+}
+.gantt-exporting [data-name-cell] {
+  min-width: max-content;
+}
+.gantt-exporting .truncate {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}

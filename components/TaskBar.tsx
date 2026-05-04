@@ -5,6 +5,7 @@ import clsx from "clsx";
 import type { Task } from "@/lib/types";
 import { advanceDays } from "@/lib/date-utils";
 import { useT } from "@/lib/i18n";
+import { useStore } from "@/lib/store";
 
 type DragMode = "move" | "resize-left" | "resize-right" | null;
 
@@ -49,6 +50,8 @@ export default function TaskBar({
   onLinkHover,
 }: Props) {
   const t = useT();
+  const labelsOutside = useStore((s) => s.labelsOutside);
+  const showLabel = !task.hideLabel;
   const startOffset = leftX;
   const width = Math.max(rightX - leftX, isMilestone ? rowHeight - 12 : 12);
 
@@ -171,9 +174,11 @@ export default function TaskBar({
           )}
           style={{ background: color }}
         />
-        <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 text-xs whitespace-nowrap font-medium text-ink-soft">
-          {task.name}
-        </span>
+        {showLabel && (
+          <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 text-xs whitespace-nowrap font-medium text-ink-soft">
+            {task.name}
+          </span>
+        )}
       </div>
     );
   }
@@ -218,14 +223,26 @@ export default function TaskBar({
                    "repeating-linear-gradient(45deg, rgba(255,255,255,0.5) 0 4px, transparent 4px 8px)",
                }} />
         )}
-        {/* Label — allowed to overflow the bar */}
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-xs font-medium text-paper whitespace-nowrap select-none pointer-events-none drop-shadow-[0_0_2px_rgba(0,0,0,0.35)]">
+        {/* Label inside the bar (white over color) */}
+        {showLabel && !labelsOutside && (
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-xs font-medium text-paper whitespace-nowrap select-none pointer-events-none drop-shadow-[0_0_2px_rgba(0,0,0,0.35)]">
+            {task.name}
+            {task.progress > 0 && (
+              <span className="ml-2 font-mono text-[10px] opacity-80">{task.progress}%</span>
+            )}
+          </span>
+        )}
+      </div>
+
+      {/* Label outside the bar (black, to the right) */}
+      {showLabel && labelsOutside && (
+        <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-10 text-xs font-medium text-ink whitespace-nowrap select-none pointer-events-none">
           {task.name}
           {task.progress > 0 && (
-            <span className="ml-2 font-mono text-[10px] opacity-80">{task.progress}%</span>
+            <span className="ml-2 font-mono text-[10px] text-ink-muted">{task.progress}%</span>
           )}
         </span>
-      </div>
+      )}
 
       {/* Resize handles */}
       <div
