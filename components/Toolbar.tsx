@@ -48,8 +48,8 @@ export default function Toolbar({ exportRef, onRestartClick }: Props) {
   const setShowWeekends = useStore((s) => s.setShowWeekends);
   const showToday = useStore((s) => s.showToday);
   const setShowToday = useStore((s) => s.setShowToday);
-  const labelsOutside = useStore((s) => s.labelsOutside);
-  const setLabelsOutside = useStore((s) => s.setLabelsOutside);
+  const labelMode = useStore((s) => s.labelMode);
+  const cycleLabelMode = useStore((s) => s.cycleLabelMode);
   const fontScale = useStore((s) => s.fontScale);
   const setFontScale = useStore((s) => s.setFontScale);
   const zoom = useStore((s) => s.zoom);
@@ -151,10 +151,10 @@ export default function Toolbar({ exportRef, onRestartClick }: Props) {
       data-no-export="true"
     >
       <div
-        className="overflow-hidden transition-[height] duration-150"
+        className="overflow-y-hidden overflow-x-auto gantt-scroll transition-[height] duration-150"
         style={{ height: toolbarH }}
       >
-        <div className="px-5 py-3 flex items-center gap-3 flex-wrap whitespace-nowrap">
+        <div className="px-5 py-3 flex items-center gap-3 whitespace-nowrap w-full min-w-max">
           <div className="flex items-center gap-2 mr-2">
             <div className="h-7 w-7 rounded-md bg-ink grid place-items-center">
               <span className="font-display italic text-paper text-base leading-none">G</span>
@@ -240,12 +240,22 @@ export default function Toolbar({ exportRef, onRestartClick }: Props) {
           </button>
 
           <button
-            onClick={() => setLabelsOutside(!labelsOutside)}
-            className={clsx("btn", labelsOutside && "bg-paper-warm")}
-            title={t.labels_outside_toggle}
+            onClick={cycleLabelMode}
+            className={clsx("btn", labelMode !== "in" && "bg-paper-warm")}
+            title={t.label_mode_toggle}
           >
-            <Tag size={14} />
-            {t.labels_outside}
+            <Tag
+              size={14}
+              className={clsx(
+                labelMode === "off" && "opacity-40 line-through",
+                labelMode === "out" && "text-accent",
+              )}
+            />
+            {labelMode === "in"
+              ? t.labels_in
+              : labelMode === "out"
+              ? t.labels_out
+              : t.labels_off}
           </button>
 
           <div

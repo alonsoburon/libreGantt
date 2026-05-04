@@ -82,7 +82,8 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
 
   const totalWidth = dayInfo.visibleCount * dayWidth;
   const totalRowsHeight = visibleOrder.length * rowHeight + rowHeight; // +1 for trailing empty row
-  const totalHeight = totalRowsHeight;
+  // +rowHeight at the bottom so the chart aligns with the table's totals row.
+  const totalHeight = totalRowsHeight + rowHeight;
 
   const dayIndexFromISO = (iso: string): number => {
     const idx = daysBetween(toISODate(range.start), iso);
@@ -336,6 +337,11 @@ export default function GanttChart({ rowHeight, onEdit }: Props) {
               style={{ left: todayX }}
             />
           )}
+          {/* Totals strip — visually matches the table's totals row */}
+          <div
+            className="absolute left-0 right-0 bg-paper-warm/40 border-t border-paper-line"
+            style={{ top: totalRowsHeight, height: rowHeight }}
+          />
         </div>
 
         {/* Bars */}

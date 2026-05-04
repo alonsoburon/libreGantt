@@ -13,7 +13,8 @@ interface State extends GanttData {
   showDependencies: boolean;
   showWeekends: boolean;
   showToday: boolean;
-  labelsOutside: boolean;
+  labelMode: "in" | "out" | "off";
+  columnWidths: { date: number; dur: number; budget: number; pct: number };
   fontScale: number;
   zoom: number;
 }
@@ -33,7 +34,8 @@ interface Actions {
   setShowDependencies: (v: boolean) => void;
   setShowWeekends: (v: boolean) => void;
   setShowToday: (v: boolean) => void;
-  setLabelsOutside: (v: boolean) => void;
+  cycleLabelMode: () => void;
+  setColumnWidth: (col: "date" | "dur" | "budget" | "pct", w: number) => void;
   setFontScale: (n: number) => void;
   setZoom: (n: number) => void;
   addDependency: (from: TaskId, to: TaskId) => void;
@@ -59,7 +61,8 @@ export const useStore = create<State & Actions>()(
       showDependencies: true,
       showWeekends: true,
       showToday: true,
-      labelsOutside: false,
+      labelMode: "in",
+      columnWidths: { date: 42, dur: 32, budget: 96, pct: 36 },
       fontScale: 1,
       zoom: 1,
 
@@ -210,7 +213,18 @@ export const useStore = create<State & Actions>()(
       setShowDependencies: (v) => set({ showDependencies: v }),
       setShowWeekends: (v) => set({ showWeekends: v }),
       setShowToday: (v) => set({ showToday: v }),
-      setLabelsOutside: (v) => set({ labelsOutside: v }),
+      cycleLabelMode: () =>
+        set((s) => ({
+          labelMode:
+            s.labelMode === "in" ? "out" : s.labelMode === "out" ? "off" : "in",
+        })),
+      setColumnWidth: (col, w) =>
+        set((s) => ({
+          columnWidths: {
+            ...s.columnWidths,
+            [col]: Math.max(20, Math.min(240, Math.round(w))),
+          },
+        })),
       setFontScale: (n) => set({ fontScale: Math.min(1.5, Math.max(0.8, n)) }),
       setZoom: (n) => set({ zoom: Math.min(2, Math.max(0.25, n)) }),
 
@@ -295,7 +309,8 @@ export const useStore = create<State & Actions>()(
         showDependencies: s.showDependencies,
         showWeekends: s.showWeekends,
         showToday: s.showToday,
-        labelsOutside: s.labelsOutside,
+        labelMode: s.labelMode,
+        columnWidths: s.columnWidths,
         fontScale: s.fontScale,
         zoom: s.zoom,
       }),

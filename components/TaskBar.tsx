@@ -50,8 +50,9 @@ export default function TaskBar({
   onLinkHover,
 }: Props) {
   const t = useT();
-  const labelsOutside = useStore((s) => s.labelsOutside);
-  const showLabel = !task.hideLabel;
+  const labelMode = useStore((s) => s.labelMode);
+  const showLabel = !task.hideLabel && labelMode !== "off";
+  const labelsOutside = labelMode === "out";
   const startOffset = leftX;
   const width = Math.max(rightX - leftX, isMilestone ? rowHeight - 12 : 12);
 

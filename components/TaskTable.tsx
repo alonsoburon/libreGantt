@@ -29,11 +29,7 @@ interface Props {
 
 export const TABLE_HEADER_H = 56;
 
-// Tight column widths so the task list panel can stay compact.
-const COL_DATE = 42; // "MM-DD" in 11px mono
-const COL_DUR = 32; // small "D" column with day count
-const COL_BUDGET = 96;
-const COL_PCT = 36;
+type ColId = "date" | "dur" | "budget" | "pct";
 
 export default function TaskTable({ rowHeight, width, onEdit }: Props) {
   const t = useT();
@@ -46,8 +42,35 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
   const addTask = useStore((s) => s.addTask);
   const deleteTask = useStore((s) => s.deleteTask);
   const updateTask = useStore((s) => s.updateTask);
+  const widths = useStore((s) => s.columnWidths);
+  const setColumnWidth = useStore((s) => s.setColumnWidth);
 
   const taskMap = new Map(tasks.map((t) => [t.id, t]));
+
+  // Totals over leaf tasks only (groups roll up from children).
+  const leaves = tasks.filter((tk) => !hasChildren(tasks, tk.id));
+  const totalDuration = leaves.reduce(
+    (s, tk) => s + durationDays(tk.start, tk.end),
+    0,
+  );
+  const totalBudget = leaves.reduce(
+    (s, tk) => s + (typeof tk.budget === "number" ? tk.budget : 0),
+    0,
+  );
+  const hasAnyBudget = leaves.some((tk) => typeof tk.budget === "number");
+  const totalDurForAvg = leaves.reduce(
+    (s, tk) => s + durationDays(tk.start, tk.end),
+    0,
+  );
+  const avgProgress =
+    totalDurForAvg > 0
+      ? Math.round(
+          leaves.reduce(
+            (s, tk) => s + durationDays(tk.start, tk.end) * tk.progress,
+            0,
+          ) / totalDurForAvg,
+        )
+      : 0;
 
   return (
     <div
@@ -65,38 +88,38 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
             {t.task}
           </div>
         </div>
-        <div
-          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
-          style={{ width: COL_DATE }}
+        <HeaderCell
+          width={widths.date}
+          onResize={(w) => setColumnWidth("date", w)}
         >
           {t.start}
-        </div>
-        <div
-          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
-          style={{ width: COL_DATE }}
+        </HeaderCell>
+        <HeaderCell
+          width={widths.date}
+          onResize={(w) => setColumnWidth("date", w)}
         >
           {t.end}
-        </div>
-        <div
-          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
-          style={{ width: COL_DUR }}
+        </HeaderCell>
+        <HeaderCell
+          width={widths.dur}
+          onResize={(w) => setColumnWidth("dur", w)}
           title={t.duration}
         >
           {t.duration_short}
-        </div>
-        <div
-          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
-          style={{ width: COL_BUDGET }}
+        </HeaderCell>
+        <HeaderCell
+          width={widths.budget}
+          onResize={(w) => setColumnWidth("budget", w)}
           title={t.budget}
         >
           $
-        </div>
-        <div
-          className="text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
-          style={{ width: COL_PCT }}
+        </HeaderCell>
+        <HeaderCell
+          width={widths.pct}
+          onResize={(w) => setColumnWidth("pct", w)}
         >
           %
-        </div>
+        </HeaderCell>
       </div>
 
       {/* Rows */}
@@ -115,6 +138,7 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
               groupBudget={groupBudget}
               selected={selectedId === id}
               rowHeight={rowHeight}
+              widths={widths}
               onSelect={() => select(id)}
               onEdit={() => onEdit(id)}
               onToggle={() => toggleCollapse(id)}
@@ -143,8 +167,113 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
           <Plus size={14} />
           {t.new_task}
         </button>
+
+        {/* Totals row */}
+        <div
+          className="flex items-center px-3 border-b border-paper-line gap-1 bg-paper-warm/40 font-medium"
+          style={{ height: rowHeight }}
+        >
+          <div className="w-3.5 shrink-0" />
+          <span className="ml-1 mr-1.5 h-2 w-2 shrink-0" />
+          <div className="flex-1 min-w-0" data-name-cell>
+            <div className="truncate text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono">
+              {t.totals}
+            </div>
+          </div>
+          <div
+            className="text-right text-[11px] font-mono text-ink-muted/70 tabular-nums shrink-0"
+            style={{ width: widths.date }}
+          >
+            —
+          </div>
+          <div
+            className="text-right text-[11px] font-mono text-ink-muted/70 tabular-nums shrink-0"
+            style={{ width: widths.date }}
+          >
+            —
+          </div>
+          <div
+            className="text-right text-[11px] font-mono text-ink tabular-nums shrink-0"
+            style={{ width: widths.dur }}
+            title={t.duration}
+          >
+            {totalDuration}
+            <span className="text-ink-muted/60 ml-0.5">{t.days_short}</span>
+          </div>
+          <div
+            className="text-right text-[11px] font-mono text-ink tabular-nums shrink-0 truncate"
+            style={{ width: widths.budget }}
+            title={hasAnyBudget ? formatBudgetFull(totalBudget) : ""}
+          >
+            {hasAnyBudget ? formatBudgetCompact(totalBudget) : "—"}
+          </div>
+          <div
+            className="text-right text-[11px] font-mono text-ink tabular-nums shrink-0"
+            style={{ width: widths.pct }}
+          >
+            {avgProgress}%
+          </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+function HeaderCell({
+  width,
+  onResize,
+  title,
+  children,
+}: {
+  width: number;
+  onResize: (w: number) => void;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="relative text-right text-[10px] uppercase tracking-[0.18em] text-ink-muted font-mono shrink-0"
+      style={{ width }}
+      title={title}
+    >
+      {children}
+      <ColResizer width={width} onResize={onResize} />
+    </div>
+  );
+}
+
+function ColResizer({
+  width,
+  onResize,
+}: {
+  width: number;
+  onResize: (w: number) => void;
+}) {
+  const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startW = width;
+    const prevCursor = document.body.style.cursor;
+    document.body.style.cursor = "col-resize";
+    const onMove = (m: PointerEvent) => {
+      onResize(startW + (m.clientX - startX));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      document.body.style.cursor = prevCursor;
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+  return (
+    <div
+      onPointerDown={onPointerDown}
+      className="absolute top-0 bottom-0 -right-0.5 w-1.5 cursor-col-resize hover:bg-ink/30 z-10"
+      data-no-export="true"
+      title="Arrastra para redimensionar"
+    />
   );
 }
 
@@ -155,6 +284,7 @@ function Row({
   groupBudget,
   selected,
   rowHeight,
+  widths,
   onSelect,
   onEdit,
   onToggle,
@@ -170,6 +300,7 @@ function Row({
   groupBudget: number | undefined;
   selected: boolean;
   rowHeight: number;
+  widths: { date: number; dur: number; budget: number; pct: number };
   onSelect: () => void;
   onEdit: () => void;
   onToggle: () => void;
@@ -229,13 +360,13 @@ function Row({
       {/* dates */}
       <div
         className="text-right text-[11px] font-mono text-ink-muted tabular-nums shrink-0"
-        style={{ width: COL_DATE }}
+        style={{ width: widths.date }}
       >
         {fmtDate(task.start)}
       </div>
       <div
         className="text-right text-[11px] font-mono text-ink-muted tabular-nums shrink-0"
-        style={{ width: COL_DATE }}
+        style={{ width: widths.date }}
       >
         {fmtDate(task.end)}
       </div>
@@ -243,7 +374,7 @@ function Row({
       {/* duration (end - start + 1, inclusive) */}
       <div
         className="text-right text-[11px] font-mono text-ink-muted tabular-nums shrink-0"
-        style={{ width: COL_DUR }}
+        style={{ width: widths.dur }}
         title={t.duration}
       >
         {durationDays(task.start, task.end)}
@@ -253,7 +384,7 @@ function Row({
       {/* budget */}
       <div
         className="text-right text-[11px] font-mono text-ink-muted tabular-nums shrink-0"
-        style={{ width: COL_BUDGET }}
+        style={{ width: widths.budget }}
         onClick={(e) => e.stopPropagation()}
       >
         {isGroup ? (
@@ -271,7 +402,7 @@ function Row({
       {/* progress */}
       <div
         className="text-right text-[11px] font-mono text-ink tabular-nums shrink-0"
-        style={{ width: COL_PCT }}
+        style={{ width: widths.pct }}
       >
         {Math.round(task.progress)}%
       </div>
