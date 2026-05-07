@@ -112,7 +112,7 @@ export default function TaskTable({ rowHeight, width, onEdit }: Props) {
           onResize={(w) => setColumnWidth("budget", w)}
           title={t.budget}
         >
-          $
+          USD
         </HeaderCell>
         <HeaderCell
           width={widths.pct}
@@ -527,17 +527,26 @@ function durationDays(start: string, end: string): number {
 function formatBudgetCompact(n: number): string {
   const abs = Math.abs(n);
   if (abs >= 1_000_000) return `$${trim(n / 1_000_000)}M`;
-  if (abs >= 10_000) return `$${trim(n / 1_000)}K`;
   if (abs >= 1_000) return `$${trim(n / 1_000)}K`;
-  return `$${Math.round(n).toLocaleString("es-CL")}`;
+  return n.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
 }
 
 function formatBudgetFull(n: number): string {
-  return `$${Math.round(n).toLocaleString("es-CL")}`;
+  return n.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
 }
 
 function trim(n: number): string {
-  // Up to 1 decimal, no trailing zero
+  // Up to 1 decimal, no trailing zero (US dot decimal)
   const r = Math.round(n * 10) / 10;
   return r.toString();
 }

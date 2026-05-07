@@ -131,25 +131,33 @@ export default function TaskDialog({ id, onClose }: Props) {
           </div>
 
           <div>
-            <label className="field-label">{tt.budget}</label>
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step="any"
-              className="field"
-              value={draft.budget ?? ""}
-              placeholder="0"
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === "") {
-                  commit({ budget: undefined });
-                } else {
-                  const n = Number(raw);
-                  if (Number.isFinite(n)) commit({ budget: n });
-                }
-              }}
-            />
+            <label className="field-label">{tt.budget} (USD)</label>
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-ink-muted pointer-events-none">
+                $
+              </span>
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="any"
+                className="field pl-6 pr-12"
+                value={draft.budget ?? ""}
+                placeholder="0.00"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") {
+                    commit({ budget: undefined });
+                  } else {
+                    const n = Number(raw);
+                    if (Number.isFinite(n)) commit({ budget: n });
+                  }
+                }}
+              />
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono uppercase tracking-[0.12em] text-ink-muted pointer-events-none">
+                USD
+              </span>
+            </div>
           </div>
 
           <div>
